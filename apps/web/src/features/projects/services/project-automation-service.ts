@@ -1,0 +1,138 @@
+import { ProjectTemplate, BusinessTypeOption } from '../types/project-types';
+
+export const DEFAULT_MILESTONES = [
+  { title: 'Planning & Discovery', description: 'Requirements gathering, scope definition, and architecture planning.', order: 1 },
+  { title: 'Design & Wireframing', description: 'UI/UX mockups, brand assets, and prototype sign-off.', order: 2 },
+  { title: 'Core Development', description: 'Feature implementation, database setup, and API integration.', order: 3 },
+  { title: 'Testing & QA', description: 'Quality assurance, bug fixes, performance, and security testing.', order: 4 },
+  { title: 'Client Review & Feedback', description: 'Deliverable presentation, user acceptance testing, and final edits.', order: 5 },
+  { title: 'Launch & Handover', description: 'Production deployment, documentation handover, and sign-off.', order: 6 },
+];
+
+export const PREDEFINED_TEMPLATES: ProjectTemplate[] = [
+  {
+    id: 'tmpl_website',
+    name: 'Website Project',
+    description: 'Complete web development workflow from wireframes to launch.',
+    businessType: 'DIGITAL',
+    categoryName: 'Website Development',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'MEDIUM',
+    defaultMilestones: [
+      { title: 'Discovery & Wireframing', description: 'Scope and low-fi wireframes.', order: 1 },
+      { title: 'UI/UX Visual Design', description: 'High-fidelity mockups and design assets.', order: 2 },
+      { title: 'Frontend & CMS Build', description: 'Next.js / CMS development and responsiveness.', order: 3 },
+      { title: 'SEO & Content Migration', description: 'Meta tags, page copy, and media optimization.', order: 4 },
+      { title: 'Testing & Launch', description: 'Cross-browser testing, domain connection, and live launch.', order: 5 },
+    ],
+  },
+  {
+    id: 'tmpl_crm',
+    name: 'CRM Implementation',
+    description: 'End-to-end CRM setup, lead pipeline configuration, and employee onboarding.',
+    businessType: 'DIGITAL',
+    categoryName: 'CRM & Systems',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'HIGH',
+    defaultMilestones: [
+      { title: 'Workspace Setup', description: 'Tenant configuration, company profile, and roles setup.', order: 1 },
+      { title: 'Data Migration', description: 'Importing contacts, leads, and customer accounts.', order: 2 },
+      { title: 'Pipeline & Automation Config', description: 'Kanban stages, notifications, and workflow rules.', order: 3 },
+      { title: 'Team Training', description: 'User role onboarding and workflow walkthroughs.', order: 4 },
+      { title: 'Go-Live Support', description: 'System validation and post-launch review.', order: 5 },
+    ],
+  },
+  {
+    id: 'tmpl_mobile',
+    name: 'Mobile App Development',
+    description: 'iOS & Android mobile app build from wireframes to app store submission.',
+    businessType: 'DIGITAL',
+    categoryName: 'Mobile Application',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'URGENT',
+    defaultMilestones: [
+      { title: 'App Architecture & UI', description: 'UI kit, user flows, and state architecture.', order: 1 },
+      { title: 'Core API Integration', description: 'Backend authentication, database APIs, and push notifications.', order: 2 },
+      { title: 'Native Feature Build', description: 'Camera, biometric login, and offline cache.', order: 3 },
+      { title: 'Beta Testing (TestFlight / Internal)', description: 'User feedback and regression testing.', order: 4 },
+      { title: 'App Store Submission', description: 'Apple App Store and Google Play Store release.', order: 5 },
+    ],
+  },
+  {
+    id: 'tmpl_branding',
+    name: 'Brand Identity & Design',
+    description: 'Logo design, brand guidelines, typography, and marketing assets.',
+    businessType: 'DIGITAL',
+    categoryName: 'Branding & Design',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'MEDIUM',
+    defaultMilestones: [
+      { title: 'Brand Discovery & Moodboard', description: 'Competitor analysis and visual direction.', order: 1 },
+      { title: 'Logo Concepts', description: 'Initial logo concepts and iteration.', order: 2 },
+      { title: 'Brand Guidelines', description: 'Color palette, typography, and usage rules.', order: 3 },
+      { title: 'Asset Delivery', description: 'Vector files, business cards, and social media templates.', order: 4 },
+    ],
+  },
+  {
+    id: 'tmpl_marketing',
+    name: 'Digital Marketing Campaign',
+    description: 'Omnichannel marketing campaign with SEO, social ads, and conversion tracking.',
+    businessType: 'DIGITAL',
+    categoryName: 'Digital Marketing',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'MEDIUM',
+    defaultMilestones: [
+      { title: 'Campaign Strategy', description: 'Target persona mapping, budget allocation, and KPI targets.', order: 1 },
+      { title: 'Creative Assets & Copywriting', description: 'Ad banners, landing page copy, and video ads.', order: 2 },
+      { title: 'Channel Setup & Tracking', description: 'Google Ads, Meta Pixel, and Analytics conversion events.', order: 3 },
+      { title: 'Campaign Launch', description: 'Ad campaigns activation and daily monitoring.', order: 4 },
+      { title: 'Performance Review', description: 'ROI reporting and optimization recommendations.', order: 5 },
+    ],
+  },
+  {
+    id: 'tmpl_custom_software',
+    name: 'Custom Software Development',
+    description: 'Tailored enterprise software build with API architecture and database integration.',
+    businessType: 'DIGITAL',
+    categoryName: 'Custom Software',
+    defaultStatus: 'PLANNING',
+    defaultPriority: 'HIGH',
+    defaultMilestones: [
+      { title: 'Technical Specification', description: 'Architecture diagram, data models, and API endpoints spec.', order: 1 },
+      { title: 'Sprint 01: Core Engine', description: 'Database schema, auth, and base microservices.', order: 2 },
+      { title: 'Sprint 02: Business Logic', description: 'Core workflows, third-party integrations, and logic.', order: 3 },
+      { title: 'Security Audit & Load Test', description: 'Vulnerability assessment and stress testing.', order: 4 },
+      { title: 'Production Deployment', description: 'CI/CD pipeline setup and live deployment.', order: 5 },
+    ],
+  },
+];
+
+export const BUSINESS_TYPE_SUGGESTIONS: Record<BusinessTypeOption, { label: string; description: string; categories: string[] }> = {
+  PHYSICAL: {
+    label: 'Physical Business',
+    description: 'Brick-and-mortar storefronts, manufacturing, healthcare, construction, retail, and physical services.',
+    categories: [
+      'Retail Store',
+      'Restaurant & Hospitality',
+      'Construction & Contracting',
+      'Manufacturing & Distribution',
+      'Healthcare & Medical',
+      'Education & Schooling',
+      'Real Estate & Facility',
+    ],
+  },
+  DIGITAL: {
+    label: 'Digital Business',
+    description: 'Online products, SaaS platforms, mobile apps, e-commerce, digital marketing, software, and remote services.',
+    categories: [
+      'Website Development',
+      'Mobile Application',
+      'CRM & Systems',
+      'E-commerce',
+      'Branding & Design',
+      'Digital Marketing',
+      'SEO & Content Strategy',
+      'Custom Software',
+    ],
+  },
+};

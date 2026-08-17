@@ -1,0 +1,1347 @@
+// AVEX CRM Database Schema
+// Production-Ready Multi-Tenant Enterprise Data Models
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ==========================================
+// ENUMS
+// ==========================================
+
+enum BusinessType {
+  DIGITAL
+  PHYSICAL
+  BOTH
+}
+
+enum CompanyStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+enum CustomerStatus {
+  ACTIVE
+  INACTIVE
+  PROSPECT
+  LOST
+  BLACKLISTED
+  ARCHIVED
+}
+
+enum CustomerPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ImportJobStatus {
+  PENDING
+  PROCESSING
+  PREVIEW_READY
+  IMPORTING
+  COMPLETED
+  FAILED
+}
+
+// ==========================================
+// MODELS
+// ==========================================
+
+/// Company represents a multi-tenant workspace entity.
+model Company {
+  id           String        @id @default(uuid())
+  name         String
+  businessType BusinessType  @default(DIGITAL)
+  logo         String?
+  timezone     String        @default("UTC")
+  currency     String        @default("USD")
+  status       CompanyStatus @default(ACTIVE)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  users              User[]
+  invitations        Invitation[]
+  activityLogs       ActivityLog[]
+  customers          Customer[]
+  leads              Lead[]
+  leadStageHistories LeadStageHistory[]
+  importJobs         ImportJob[]
+  tags               Tag[]
+  savedFilters       SavedFilter[]
+  recentSearches     RecentSearch[]
+  taxRates           TaxRate[]
+  taxTemplates       TaxTemplate[]
+  discounts          Discount[]
+  discountRules      DiscountRule[]
+  projects           Project[]
+  projectCategories  ProjectCategory[]
+  projectMilestones  ProjectMilestone[]
+  projectNotes       ProjectNote[]
+  invoices           Invoice[]
+  invoiceTemplates   InvoiceTemplate[]
+  invoicePayments    InvoicePayment[]
+  companyBranding    CompanyBranding?
+  quotations         Quotation[]
+  expenses           Expense[]
+  expenseCategories  ExpenseCategory[]
+  vendors            Vendor[]
+  recurringInvoices  RecurringInvoice[]
+  savedReports       SavedReport[]
+  scheduledReports   ScheduledReport[]
+
+  @@map("companies")
+}
+
+/// User represents an authenticated user belonging to a specific company workspace.
+model User {
+  id             String     @id @default(uuid())
+  supabaseUserId String     @unique
+  companyId      String
+  fullName       String
+  email          String     @unique
+  avatar         String?
+  status         UserStatus @default(ACTIVE)
+  lastLogin      DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  company             Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  profile             UserProfile?
+  userRoles           UserRole[]
+  sessions            Session[]
+  activityLogs        ActivityLog[]
+  createdInvites      Invitation[]       @relation("InvitedBy")
+  assignedCustomers   Customer[]         @relation("AssignedCustomers")
+  customerNotes       CustomerNote[]
+  assignedLeads       Lead[]             @relation("AssignedLeads")
+  leadNotes           LeadNote[]         @relation("LeadNoteAuthor")
+  stageHistoryUpdates LeadStageHistory[] @relation("LeadStageHistoryUser")
+  importJobs          ImportJob[]        @relation("ImportJobAuthor")
+  savedFilters        SavedFilter[]
+  recentSearches      RecentSearch[]
+  managedProjects     Project[]          @relation("ProjectManager")
+  projectMembers      ProjectMember[]
+  projectNotes        ProjectNote[]
+  employeeExpenses    Expense[]          @relation("ExpenseEmployee")
+
+  @@index([companyId])
+  @@index([email])
+  @@index([supabaseUserId])
+  @@map("users")
+}
+
+/// UserProfile stores detailed personal and professional info separate from auth data.
+model UserProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  phone        String?
+  address      String?
+  jobTitle     String?
+  bio          String?
+  profileImage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_profiles")
+}
+
+/// Role defines a system or custom RBAC role.
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  userRoles       UserRole[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+/// Permission defines an atomic access capability token.
+model Permission {
+  id        String   @id @default(uuid())
+  code      String   @unique
+  name      String
+  group     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+/// RolePermission connects Roles with atomic Permission capabilities.
+model RolePermission {
+  roleId       String
+  permissionId String
+  createdAt    DateTime @default(now())
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// UserRole connects Users with assigned Roles.
+model UserRole {
+  userId    String
+  roleId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+/// Invitation stores pending user invitations to join a company workspace.
+model Invitation {
+  id          String           @id @default(uuid())
+  email       String
+  role        String
+  companyId   String
+  token       String           @unique
+  expiresAt   DateTime
+  status      InvitationStatus @default(PENDING)
+  createdById String
+  createdAt   DateTime         @default(now())
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User    @relation("InvitedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([token])
+  @@index([email])
+  @@map("invitations")
+}
+
+/// Session tracks user login devices and active session history.
+model Session {
+  id           String   @id @default(uuid())
+  userId       String
+  deviceIp     String?
+  userAgent    String?
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+/// ActivityLog stores audit trail logs for business actions.
+model ActivityLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  companyId   String
+  action      String
+  module      String
+  description String
+  metadata    Json?
+  timestamp   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("activity_logs")
+}
+
+/// Customer stores company client profiles and lifecycle metadata.
+model Customer {
+  id                 String           @id @default(uuid())
+  companyId          String
+  assignedEmployeeId String?
+  name               String
+  companyName        String
+  email              String
+  phone              String
+  alternatePhone     String?
+  country            String?
+  state              String?
+  city               String?
+  address            String?
+  postalCode         String?
+  industry           String?
+  businessType       String?
+  website            String?
+  companySize        String?
+  status             CustomerStatus   @default(ACTIVE)
+  source             String?
+  priority           CustomerPriority @default(MEDIUM)
+  tags               String[]         @default([])
+  isArchived         Boolean          @default(false)
+  deletedAt          DateTime?
+  createdBy          String?
+  updatedBy          String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  company          Company        @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignedEmployee User?          @relation("AssignedCustomers", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  notes            CustomerNote[]
+  convertedLead    Lead?          @relation("ConvertedFromLead")
+  projects          Project[]
+  invoices          Invoice[]
+  quotations        Quotation[]
+  recurringInvoices RecurringInvoice[]
+
+  @@index([companyId])
+  @@index([assignedEmployeeId])
+  @@index([email])
+  @@index([status])
+  @@index([isArchived])
+  @@index([deletedAt])
+  @@map("customers")
+}
+
+/// CustomerNote stores internal team notes on customer accounts.
+model CustomerNote {
+  id          String   @id @default(uuid())
+  customerId  String
+  companyId   String
+  content     String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([customerId])
+  @@index([companyId])
+  @@map("customer_notes")
+}
+
+// ==========================================
+// LEAD MANAGEMENT ENUMS & MODELS
+// ==========================================
+
+/// Lead stores sales prospect profiles, qualification scores, and pipeline lifecycle state.
+model Lead {
+  id                  String       @id @default(uuid())
+  companyId           String
+  assignedEmployeeId  String?
+  name                String
+  companyName         String
+  email               String
+  phone               String
+  alternatePhone      String?
+  country             String?
+  state               String?
+  city                String?
+  address             String?
+  postalCode          String?
+  industry            String?
+  businessType        String?
+  website             String?
+  companySize         String?
+  source              String?      @default("Website")
+  status              LeadStatus   @default(NEW)
+  priority            LeadPriority @default(MEDIUM)
+  score               Int                @default(50)
+  winProbability      Int                @default(50)
+  stageOrder          Int                @default(0)
+  expectedDealValue   Float?
+  expectedClosingDate DateTime?
+  tags                String[]           @default([])
+  convertedCustomerId String?            @unique
+  isConverted         Boolean            @default(false)
+  convertedAt         DateTime?
+  isArchived          Boolean            @default(false)
+  deletedAt           DateTime?
+  lastContactAt       DateTime?
+  createdBy           String?
+  updatedBy           String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+
+  company           Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  assignedEmployee  User?              @relation("AssignedLeads", fields: [assignedEmployeeId], references: [id], onDelete: SetNull)
+  convertedCustomer Customer?          @relation("ConvertedFromLead", fields: [convertedCustomerId], references: [id], onDelete: SetNull)
+  notes             LeadNote[]
+  stageHistory      LeadStageHistory[]
+
+  @@index([companyId])
+  @@index([assignedEmployeeId])
+  @@index([email])
+  @@index([status])
+  @@index([score])
+  @@index([isArchived])
+  @@index([deletedAt])
+  @@map("leads")
+}
+
+/// LeadNote stores internal team notes on lead opportunities.
+model LeadNote {
+  id          String   @id @default(uuid())
+  leadId      String
+  companyId   String
+  content     String
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lead      Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  createdBy User @relation("LeadNoteAuthor", fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([leadId])
+  @@index([companyId])
+  @@map("lead_notes")
+}
+
+/// LeadStageHistory tracks every stage transition for a lead in the Kanban pipeline.
+model LeadStageHistory {
+  id          String     @id @default(uuid())
+  leadId      String
+  companyId   String
+  fromStage   LeadStatus
+  toStage     LeadStatus
+  updatedById String?
+  createdAt   DateTime   @default(now())
+
+  lead      Lead    @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  updatedBy User?   @relation("LeadStageHistoryUser", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([leadId])
+  @@index([companyId])
+  @@map("lead_stage_history")
+}
+
+// ==========================================
+// IMPORT JOB ENUMS & MODELS
+// ==========================================
+
+/// ImportJob tracks AI/OCR lead import metadata, preview rows, error logs, and execution status.
+model ImportJob {
+  id             String          @id @default(uuid())
+  companyId      String
+  fileName       String
+  fileType       String
+  fileSize       Int
+  status         ImportJobStatus @default(PENDING)
+  totalRecords   Int             @default(0)
+  successCount   Int             @default(0)
+  duplicateCount Int             @default(0)
+  failedCount    Int             @default(0)
+  createdById    String?
+  extractedData  Json?
+  fieldMapping   Json?
+  errorLog       Json?
+  startedAt      DateTime        @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User?   @relation("ImportJobAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([status])
+  @@map("import_jobs")
+}
+
+// ==========================================
+// SEARCH, SAVED FILTERS & TAG MODELS
+// ==========================================
+
+/// Tag represents a workspace-wide tag entity with custom color.
+model Tag {
+  id          String   @id @default(uuid())
+  companyId   String
+  name        String
+  color       String   @default("#3B82F6")
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([name])
+  @@map("tags")
+}
+
+/// SavedFilter stores user-defined filter presets for quick application.
+model SavedFilter {
+  id           String   @id @default(uuid())
+  companyId    String
+  userId       String
+  module       String   @default("ALL")
+  name         String
+  filterConfig Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([companyId])
+  @@map("saved_filters")
+}
+
+/// RecentSearch tracks per-user recent search term history.
+model RecentSearch {
+  id        String   @id @default(uuid())
+  companyId String
+  userId    String
+  query     String
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("recent_searches")
+}
+
+// ==========================================
+// TAX & DISCOUNT MANAGEMENT MODELS
+// ==========================================
+
+enum TaxType {
+  INCLUSIVE
+  EXCLUSIVE
+}
+
+enum TaxStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum DiscountApplicableTo {
+  INVOICE
+  QUOTATION
+  LINE_ITEM
+  ALL
+}
+
+enum DiscountRuleStatus {
+  ACTIVE
+  EXPIRED
+  INACTIVE
+}
+
+/// TaxRate represents a tax rate configuration (e.g. GST, VAT, Sales Tax).
+model TaxRate {
+  id          String    @id @default(uuid())
+  companyId   String
+  name        String
+  code        String?
+  percentage  Float
+  type        TaxType   @default(EXCLUSIVE)
+  description String?
+  status      TaxStatus @default(ACTIVE)
+  isDeleted   Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company          Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  taxTemplateItems TaxTemplateItem[]
+
+  @@index([companyId])
+  @@index([status])
+  @@index([isDeleted])
+  @@map("tax_rates")
+}
+
+/// TaxTemplate represents reusable tax configuration templates (e.g. Pakistan GST, UK VAT).
+model TaxTemplate {
+  id                String   @id @default(uuid())
+  companyId         String
+  name              String
+  description       String?
+  isDefault         Boolean  @default(false)
+  calculationMethod TaxType  @default(EXCLUSIVE)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  company Company           @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   TaxTemplateItem[]
+
+  @@index([companyId])
+  @@index([isDefault])
+  @@map("tax_templates")
+}
+
+/// TaxTemplateItem connects TaxTemplate with TaxRate entities.
+model TaxTemplateItem {
+  id         String   @id @default(uuid())
+  templateId String
+  taxRateId  String
+  createdAt  DateTime @default(now())
+
+  template TaxTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  taxRate  TaxRate     @relation(fields: [taxRateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, taxRateId])
+  @@map("tax_template_items")
+}
+
+/// Discount represents fixed or percentage discount rules.
+model Discount {
+  id           String               @id @default(uuid())
+  companyId    String
+  name         String
+  code         String?
+  type         DiscountType         @default(PERCENTAGE)
+  value        Float
+  applicableTo DiscountApplicableTo @default(ALL)
+  description  String?
+  status       TaxStatus            @default(ACTIVE)
+  isDeleted    Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@map("discounts")
+}
+
+/// DiscountRule represents automated or rule-based discounts (Early Payment, Seasonal, Promotional).
+model DiscountRule {
+  id          String             @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  type        DiscountType       @default(PERCENTAGE)
+  value       Float
+  startDate   DateTime?
+  endDate     DateTime?
+  status      DiscountRuleStatus @default(ACTIVE)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([status])
+  @@map("discount_rules")
+}
+
+// ==========================================
+// INVOICE, BRANDING & FINANCIAL MODELS
+// ==========================================
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  VIEWED
+  PARTIALLY_PAID
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum InvoiceLayoutStyle {
+  CLASSIC
+  MODERN
+  MINIMAL
+  PROFESSIONAL
+}
+
+model CompanyBranding {
+  id          String   @id @default(uuid())
+  companyId   String   @unique
+  companyName String?
+  logoUrl     String?
+  taxNumber   String?
+  website     String?
+  phone       String?
+  email       String?
+  address     String?
+  city        String?
+  state       String?
+  zip         String?
+  country     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@map("company_brandings")
+}
+
+model InvoiceTemplate {
+  id                   String             @id @default(uuid())
+  companyId            String
+  name                 String
+  layoutStyle          InvoiceLayoutStyle @default(CLASSIC)
+  isDefault            Boolean            @default(false)
+  isBuiltIn            Boolean            @default(false)
+  primaryColor         String             @default("#2563eb")
+  secondaryColor       String             @default("#475569")
+  fontFamily           String             @default("Inter")
+  fontSize             String             @default("NORMAL")
+  logoPosition         String             @default("LEFT")
+  headerAlignment      String             @default("LEFT")
+  showCompanyAddress   Boolean            @default(true)
+  showPhone            Boolean            @default(true)
+  showEmail            Boolean            @default(true)
+  showWebsite          Boolean            @default(true)
+  showTaxNumber        Boolean            @default(true)
+  visibleColumns       String[]           @default(["name", "description", "qty", "price", "total"])
+  visibleSummaryFields String[]           @default(["subtotal", "tax", "grandTotal"])
+  thankYouMessage      String?
+  footerText           String?
+  defaultTerms         String?
+  createdById          String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@index([isDefault])
+  @@map("invoice_templates")
+}
+
+model Invoice {
+  id               String        @id @default(uuid())
+  companyId        String
+  invoiceNumber    String
+  customerId       String
+  projectId        String?
+  salesRepId       String?
+  invoiceDate      DateTime
+  dueDate          DateTime
+  status           InvoiceStatus @default(DRAFT)
+  currency         String        @default("USD")
+  subtotal         Float         @default(0)
+  discountAmount   Float         @default(0)
+  taxAmount        Float         @default(0)
+  grandTotal       Float         @default(0)
+  amountPaid       Float         @default(0)
+  remainingBalance Float         @default(0)
+  notes            String?
+  termsConditions  String?
+  sentAt           DateTime?
+  viewedAt         DateTime?
+  paidAt           DateTime?
+  deletedAt        DateTime?
+  createdById      String?
+  updatedById      String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  company  Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  project  Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  items    InvoiceItem[]
+  payments InvoicePayment[]
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([projectId])
+  @@index([status])
+  @@index([invoiceNumber])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id           String   @id @default(uuid())
+  invoiceId    String
+  name         String
+  description  String?
+  quantity     Float    @default(1)
+  unitPrice    Float    @default(0)
+  discountRate Float    @default(0)
+  taxRate      Float    @default(0)
+  lineTotal    Float    @default(0)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+model InvoicePayment {
+  id              String   @id @default(uuid())
+  invoiceId       String
+  companyId       String
+  amount          Float
+  paymentDate     DateTime @default(now())
+  paymentMethod   String   @default("BANK_TRANSFER")
+  referenceNumber String?
+  notes           String?
+  recordedById    String?
+  createdAt       DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([companyId])
+  @@map("invoice_payments")
+}
+
+// ==========================================
+// PROJECT MANAGEMENT MODELS
+// ==========================================
+
+enum ProjectStatus {
+  PLANNING
+  PENDING
+  IN_PROGRESS
+  ON_HOLD
+  REVIEW
+  COMPLETED
+  CANCELLED
+  ARCHIVED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ProjectMemberRole {
+  PROJECT_MANAGER
+  MEMBER
+  VIEWER
+}
+
+enum ProjectMilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+model ProjectCategory {
+  id          String    @id @default(uuid())
+  companyId   String
+  name        String
+  description String?
+  color       String    @default("#3B82F6")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  projects Project[]
+
+  @@index([companyId])
+  @@map("project_categories")
+}
+
+model Project {
+  id                     String          @id @default(uuid())
+  companyId              String
+  projectCode            String
+  name                   String
+  description            String?
+  customerId             String?
+  projectManagerId       String?
+  categoryId             String?
+  status                 ProjectStatus   @default(PLANNING)
+  priority               ProjectPriority @default(MEDIUM)
+  businessType           String?
+  currency               String          @default("USD")
+  templateId             String?
+  startDate              DateTime?
+  expectedCompletionDate DateTime?
+  actualCompletionDate   DateTime?
+  budget                 Float?
+  isArchived             Boolean         @default(false)
+  deletedAt              DateTime?
+  createdBy              String?
+  updatedBy              String?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  company        Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer       Customer?          @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  projectManager User?              @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  category       ProjectCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  members        ProjectMember[]
+  milestones        ProjectMilestone[]
+  notes             ProjectNote[]
+  invoices          Invoice[]
+  expenses          Expense[]
+  recurringInvoices RecurringInvoice[]
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([projectManagerId])
+  @@index([status])
+  @@index([isArchived])
+  @@index([deletedAt])
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String            @id @default(uuid())
+  projectId String
+  userId    String
+  role      ProjectMemberRole @default(MEMBER)
+  createdAt DateTime          @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model ProjectMilestone {
+  id          String                 @id @default(uuid())
+  projectId   String
+  companyId   String
+  title       String
+  description String?
+  order       Int                    @default(1)
+  status      ProjectMilestoneStatus @default(PENDING)
+  dueDate     DateTime?
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@map("project_milestones")
+}
+
+model ProjectNote {
+  id          String   @id @default(uuid())
+  projectId   String
+  companyId   String
+  content     String
+  isPinned    Boolean  @default(false)
+  createdById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([companyId])
+  @@map("project_notes")
+}
+
+// ==========================================
+// QUOTATION & ESTIMATES MODELS
+// ==========================================
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  VIEWED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CONVERTED
+}
+
+enum EstimateType {
+  FIXED_PRICE
+  HOURLY
+  MONTHLY
+  CUSTOM
+}
+
+model Quotation {
+  id                 String          @id @default(uuid())
+  companyId          String
+  quoteNumber        String
+  customerId         String
+  leadId             String?
+  salesRepId         String?
+  estimateType       EstimateType    @default(FIXED_PRICE)
+  quoteDate          DateTime
+  expiryDate         DateTime
+  status             QuotationStatus @default(DRAFT)
+  currency           String          @default("USD")
+  subtotal           Float           @default(0)
+  discountAmount     Float           @default(0)
+  taxAmount          Float           @default(0)
+  grandTotal         Float           @default(0)
+  notes              String?
+  termsConditions    String?
+  version            Int             @default(1)
+  sentAt             DateTime?
+  viewedAt           DateTime?
+  acceptedAt         DateTime?
+  rejectedAt         DateTime?
+  convertedAt        DateTime?
+  convertedProjectId String?
+  convertedInvoiceId String?
+  deletedAt          DateTime?
+  createdById        String?
+  updatedById        String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  company  Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    QuotationItem[]
+  versions QuotationVersion[]
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([status])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id           String   @id @default(uuid())
+  quotationId  String
+  name         String
+  description  String?
+  quantity     Float    @default(1)
+  unitPrice    Float    @default(0)
+  discountRate Float    @default(0)
+  taxRate      Float    @default(0)
+  lineTotal    Float    @default(0)
+  sortOrder    Int      @default(0)
+  createdAt    DateTime @default(now())
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_items")
+}
+
+model QuotationVersion {
+  id            String   @id @default(uuid())
+  quotationId   String
+  versionNumber Int
+  snapshotData  Json
+  changeNotes   String?
+  createdById   String?
+  createdAt     DateTime @default(now())
+
+  quotation Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+
+  @@index([quotationId])
+  @@map("quotation_versions")
+}
+
+// ==========================================
+// EXPENSE MANAGEMENT MODELS
+// ==========================================
+
+enum ExpenseStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  REJECTED
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CHEQUE
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_WALLET
+  OTHER
+}
+
+model ExpenseCategory {
+  id          String    @id @default(uuid())
+  companyId   String
+  name        String
+  isBuiltIn   Boolean   @default(false)
+  color       String    @default("#3B82F6")
+  createdById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([companyId])
+  @@map("expense_categories")
+}
+
+model Vendor {
+  id            String    @id @default(uuid())
+  companyId     String
+  name          String
+  contactPerson String?
+  email         String?
+  phone         String?
+  address       String?
+  notes         String?
+  createdById   String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  company  Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  expenses Expense[]
+
+  @@index([companyId])
+  @@map("vendors")
+}
+
+model Expense {
+  id            String        @id @default(uuid())
+  companyId     String
+  title         String
+  description   String?
+  categoryId    String
+  amount        Float
+  expenseDate   DateTime
+  vendorId      String?
+  projectId     String?
+  employeeId    String?
+  paymentMethod PaymentMethod @default(BANK_TRANSFER)
+  status        ExpenseStatus @default(DRAFT)
+  receiptUrl    String?
+  receiptName   String?
+  receiptSize   Int?
+  notes         String?
+  reviewedById  String?
+  reviewedAt    DateTime?
+  approvalNotes String?
+  deletedAt     DateTime?
+  createdById   String?
+  updatedById   String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  company  Company         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category ExpenseCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  vendor   Vendor?         @relation(fields: [vendorId], references: [id], onDelete: SetNull)
+  project  Project?        @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  employee User?           @relation("ExpenseEmployee", fields: [employeeId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([categoryId])
+  @@index([projectId])
+  @@index([status])
+  @@map("expenses")
+}
+
+// ==========================================
+// RECURRING INVOICES & AUTOMATION MODELS
+// ==========================================
+
+enum BillingFrequency {
+  DAILY
+  WEEKLY
+  BI_WEEKLY
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUALLY
+  YEARLY
+  CUSTOM
+}
+
+enum RecurringStatus {
+  ACTIVE
+  PAUSED
+  EXPIRED
+  CANCELLED
+}
+
+model RecurringInvoice {
+  id                  String           @id @default(uuid())
+  companyId           String
+  templateName        String
+  customerId          String
+  projectId           String?
+  billingStartDate    DateTime
+  billingEndDate      DateTime?
+  frequency           BillingFrequency @default(MONTHLY)
+  customIntervalDays  Int?
+  nextBillingDate     DateTime
+  lastInvoiceDate     DateTime?
+  totalCycles         Int?
+  remainingCycles     Int?
+  status              RecurringStatus  @default(ACTIVE)
+  cancellationReason  String?
+  currency            String           @default("USD")
+  subtotal            Float            @default(0)
+  discountAmount      Float            @default(0)
+  taxAmount           Float            @default(0)
+  grandTotal          Float            @default(0)
+  notes               String?
+  termsConditions     String?
+  createdById         String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  company  Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  customer Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  project  Project?                 @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  items    RecurringInvoiceItem[]
+  history  RecurringInvoiceHistory[]
+
+  @@index([companyId])
+  @@index([customerId])
+  @@index([projectId])
+  @@index([status])
+  @@index([nextBillingDate])
+  @@map("recurring_invoices")
+}
+
+model RecurringInvoiceItem {
+  id                 String   @id @default(uuid())
+  recurringInvoiceId String
+  name               String
+  description        String?
+  quantity           Float    @default(1)
+  unitPrice          Float    @default(0)
+  discountRate       Float    @default(0)
+  taxRate            Float    @default(0)
+  lineTotal          Float    @default(0)
+  sortOrder          Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  recurringInvoice RecurringInvoice @relation(fields: [recurringInvoiceId], references: [id], onDelete: Cascade)
+
+  @@index([recurringInvoiceId])
+  @@map("recurring_invoice_items")
+}
+
+model RecurringInvoiceHistory {
+  id                 String   @id @default(uuid())
+  recurringInvoiceId String
+  generatedInvoiceId String?
+  invoiceNumber      String
+  amount             Float
+  status             String   @default("DRAFT")
+  generatedAt        DateTime @default(now())
+
+  recurringInvoice RecurringInvoice @relation(fields: [recurringInvoiceId], references: [id], onDelete: Cascade)
+
+  @@index([recurringInvoiceId])
+  @@map("recurring_invoice_histories")
+}
+
+// ==========================================
+// FINANCIAL REPORTS & ANALYTICS MODELS
+// ==========================================
+
+enum ReportType {
+  REVENUE
+  EXPENSE
+  INVOICE
+  PAYMENT
+  PROFIT_LOSS
+  TAX
+  CUSTOMER
+  PROJECT
+}
+
+enum ScheduleFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model SavedReport {
+  id          String     @id @default(uuid())
+  companyId   String
+  title       String
+  reportType  ReportType
+  description String?
+  filters     Json?
+  createdById String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("saved_reports")
+}
+
+model ScheduledReport {
+  id             String            @id @default(uuid())
+  companyId      String
+  title          String
+  reportType     ReportType
+  frequency      ScheduleFrequency @default(MONTHLY)
+  deliveryMethod String            @default("IN_APP")
+  recipients     Json?
+  filters        Json?
+  lastRunAt      DateTime?
+  nextRunAt      DateTime?
+  status         String            @default("ACTIVE")
+  createdById    String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+  @@map("scheduled_reports")
+}
+
+
+
+
