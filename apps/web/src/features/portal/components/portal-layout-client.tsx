@@ -4,16 +4,26 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { ClientAccount } from '../types/portal-types';
-import { fetchClientMe } from '../services/portal-service';
+import { Badge } from '@/components/ui/badge';
+import { ClientAccount, ClientNotification } from '../types/portal-types';
+import { fetchClientMe, fetchClientNotifications, clientLogout } from '../services/portal-service';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import {
   LayoutDashboard,
   FolderKanban,
+  FileCheck,
+  FileText,
   FileEdit,
+  Calendar,
+  Folder,
   MessageSquare,
   User,
   LogOut,
   ShieldCheck,
+  Menu,
+  X,
+  Bell,
+  ChevronRight,
 } from 'lucide-react';
 
 interface PortalLayoutClientProps {
@@ -24,6 +34,9 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [client, setClient] = React.useState<ClientAccount | null>(null);
+  const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
+  const [notifications, setNotifications] = React.useState<ClientNotification[]>([]);
+  const [showNotifs, setShowNotifs] = React.useState(false);
 
   const isLoginPage = pathname === '/portal/login';
 
@@ -32,10 +45,21 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
       fetchClientMe()
         .then(setClient)
         .catch(() => {
-          // If login fails, redirect to portal login
+          // If unauthenticated, redirect to login
+          router.push('/portal/login');
         });
+
+      fetchClientNotifications()
+        .then(setNotifications)
+        .catch(() => {});
     }
-  }, [isLoginPage]);
+  }, [isLoginPage, router]);
+
+  // Close mobile nav on route change
+  React.useEffect(() => {
+    setIsMobileNavOpen(false);
+    setShowNotifs(false);
+  }, [pathname]);
 
   if (isLoginPage) {
     return <>{children}</>;
@@ -43,49 +67,82 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
 
   const navLinks = [
     { href: '/portal', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-    { href: '/portal/projects', label: 'My Projects', icon: <FolderKanban className="h-4 w-4" /> },
-    { href: '/portal/change-requests', label: 'Change Requests', icon: <FileEdit className="h-4 w-4" /> },
+    { href: '/portal/projects', label: 'Projects', icon: <FolderKanban className="h-4 w-4" /> },
+    { href: '/portal/quotations', label: 'Quotations', icon: <FileCheck className="h-4 w-4" /> },
+    { href: '/portal/invoices', label: 'Invoices', icon: <FileText className="h-4 w-4" /> },
+    { href: '/portal/requests', label: 'Requests', icon: <FileEdit className="h-4 w-4" /> },
+    { href: '/portal/meetings', label: 'Meetings', icon: <Calendar className="h-4 w-4" /> },
+    { href: '/portal/files', label: 'Files', icon: <Folder className="h-4 w-4" /> },
     { href: '/portal/messages', label: 'Messages', icon: <MessageSquare className="h-4 w-4" /> },
     { href: '/portal/profile', label: 'Profile', icon: <User className="h-4 w-4" /> },
   ];
 
-  const handleLogout = () => {
-    document.cookie = 'client_session=; Max-Age=0; path=/;';
+  const handleLogout = async () => {
+    await clientLogout();
     router.push('/portal/login');
   };
+
+  const unreadCount = notifications.filter((n) => !n.isRead).length;
+
+  const initials = client?.name
+    ? client.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2)
+    : 'CL';
 
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Client Portal Header */}
-      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-xs">
+      <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Branding */}
+            {/* Left: Mobile Toggle & Brand */}
             <div className="flex items-center space-x-3">
-              <Link href="/portal" className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden h-9 w-9 text-muted-foreground"
+                onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
+                aria-label="Toggle navigation"
+              >
+                {isMobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+
+              <Link href="/portal" className="flex items-center space-x-2.5">
                 <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-extrabold flex items-center justify-center text-sm shadow-xs">
                   AV
                 </div>
                 <div className="flex flex-col">
                   <span className="font-bold text-sm tracking-tight text-foreground flex items-center gap-1.5">
-                    AVEX <span className="text-xs font-semibold px-2 py-0.2 rounded bg-primary/10 text-primary border border-primary/20">Client Portal</span>
+                    AVEX
+                    <Badge variant="secondary" className="text-[10px] font-semibold px-1.5 py-0">
+                      Client Portal
+                    </Badge>
+                  </span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
+                    {client?.customer?.companyName || 'Enterprise Customer Workspace'}
                   </span>
                 </div>
               </Link>
             </div>
 
-            {/* Navigation Bar */}
-            <nav className="hidden md:flex items-center space-x-1">
+            {/* Desktop Navigation Links */}
+            <nav className="hidden lg:flex items-center space-x-1">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href || (link.href !== '/portal' && pathname.startsWith(link.href));
+                const isActive =
+                  pathname === link.href ||
+                  (link.href !== '/portal' && pathname.startsWith(link.href));
 
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-semibold transition-colors ${
+                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                       isActive
-                        ? 'bg-primary/10 text-primary font-bold'
+                        ? 'bg-primary/10 text-primary font-bold shadow-2xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                     }`}
                   >
@@ -96,50 +153,168 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
               })}
             </nav>
 
-            {/* Client User Menu */}
-            <div className="flex items-center space-x-3">
+            {/* Right: Actions, Notifications, Profile & Logout */}
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+
+              {/* Notification Popover Button */}
+              <div className="relative">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 text-muted-foreground relative"
+                  onClick={() => setShowNotifs(!showNotifs)}
+                  title="Notifications"
+                >
+                  <Bell className="h-4 w-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary ring-2 ring-card" />
+                  )}
+                </Button>
+
+                {showNotifs && (
+                  <div className="absolute right-0 mt-2 w-80 rounded-xl border border-border bg-card shadow-lg p-3 z-50 animate-in fade-in-50 zoom-in-95">
+                    <div className="flex items-center justify-between pb-2 mb-2 border-b border-border">
+                      <span className="text-xs font-bold text-foreground">Client Updates</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {notifications.length} updates
+                      </Badge>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-4">No recent updates</p>
+                      ) : (
+                        notifications.map((notif) => (
+                          <div
+                            key={notif.id}
+                            className="p-2 rounded-lg bg-muted/40 hover:bg-muted/70 transition-colors text-xs space-y-1"
+                          >
+                            <p className="font-semibold text-foreground">{notif.title}</p>
+                            <p className="text-muted-foreground text-[11px]">{notif.message}</p>
+                            {notif.link && (
+                              <Link
+                                href={notif.link}
+                                className="text-[10px] text-primary font-medium hover:underline flex items-center gap-0.5 mt-1"
+                              >
+                                View details <ChevronRight className="h-3 w-3" />
+                              </Link>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* User Profile Badge */}
               {client && (
-                <div className="flex items-center space-x-2 text-xs">
-                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center border border-primary/20">
-                    {client.name
-                      .split(' ')
-                      .map((n) => n[0])
-                      .join('')
-                      .toUpperCase()
-                      .substring(0, 2)}
+                <Link
+                  href="/portal/profile"
+                  className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-muted/60 transition-colors text-xs"
+                >
+                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center border border-primary/20 text-xs">
+                    {initials}
                   </div>
-                  <div className="hidden sm:flex flex-col">
-                    <span className="font-bold text-foreground truncate max-w-[120px]">{client.name}</span>
-                    <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">{client.customer?.companyName}</span>
+                  <div className="hidden xl:flex flex-col text-left">
+                    <span className="font-bold text-foreground truncate max-w-[110px]">{client.name}</span>
+                    <span className="text-[10px] text-muted-foreground truncate max-w-[110px]">
+                      {client.customer?.companyName || 'Client'}
+                    </span>
                   </div>
-                </div>
+                </Link>
               )}
 
+              {/* Logout Button */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                title="Log Out Client Portal"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                title="Sign Out of Client Portal"
               >
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer / Sub-bar for medium devices */}
+        <div className="lg:hidden border-t border-border/60 bg-card px-4 py-2 overflow-x-auto">
+          <div className="flex items-center space-x-1 min-w-max">
+            {navLinks.map((link) => {
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/portal' && pathname.startsWith(link.href));
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
+                    isActive
+                      ? 'bg-primary/10 text-primary font-bold shadow-2xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
       </header>
 
-      {/* Main Content Area */}
-      <main className="flex-1 py-8">
+      {/* Mobile Drawer Menu (When Toggle is Opened) */}
+      {isMobileNavOpen && (
+        <div className="md:hidden fixed inset-0 top-16 z-50 bg-background/80 backdrop-blur-sm">
+          <div className="bg-card border-b border-border p-4 shadow-xl space-y-1">
+            {navLinks.map((link) => {
+              const isActive =
+                pathname === link.href ||
+                (link.href !== '/portal' && pathname.startsWith(link.href));
+
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMobileNavOpen(false)}
+                  className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg text-sm font-medium ${
+                    isActive
+                      ? 'bg-primary text-primary-foreground font-bold'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.label}</span>
+                </Link>
+              );
+            })}
+            <div className="pt-4 border-t border-border mt-3">
+              <Button
+                variant="outline"
+                className="w-full justify-start text-destructive gap-2 text-xs"
+                onClick={handleLogout}
+              >
+                <LogOut className="h-4 w-4" /> Sign Out
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content Body */}
+      <main className="flex-1 py-6 sm:py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">{children}</div>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card py-4 text-center text-xs text-muted-foreground">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      {/* Footer with Security Badge */}
+      <footer className="border-t border-border bg-card py-4 text-xs text-muted-foreground">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p>© {new Date().getFullYear()} AVEX CRM Client Workspace. All client communications encrypted.</p>
-          <span className="flex items-center gap-1 font-semibold text-emerald-500">
-            <ShieldCheck className="h-4 w-4" /> Protected Client Isolation
+          <span className="flex items-center gap-1.5 font-semibold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
+            <ShieldCheck className="h-3.5 w-3.5" /> Protected Client Isolation
           </span>
         </div>
       </footer>

@@ -10,19 +10,26 @@ export async function GET(request: NextRequest) {
     let client = clientIdCookie
       ? await db.clientAccount.findUnique({
           where: { id: clientIdCookie },
-          include: { customer: true },
+          include: {
+            customer: true,
+            company: { select: { id: true, name: true, logoUrl: true } },
+          },
         })
       : null;
 
     if (!client) {
-      // Fallback first client account or customer for demo
+      // Fallback for initial demo environment if no cookie set
       client = await db.clientAccount.findFirst({
-        include: { customer: true },
+        where: { isActive: true },
+        include: {
+          customer: true,
+          company: { select: { id: true, name: true, logoUrl: true } },
+        },
       });
     }
 
     if (!client) {
-      const customer = await db.customer.findFirst();
+      const customer = await db.customer.findFirst({ include: { company: true } });
       if (customer) {
         client = await db.clientAccount.create({
           data: {
@@ -32,14 +39,28 @@ export async function GET(request: NextRequest) {
             passwordHash: 'hashed_pwd',
             name: customer.name,
             phone: customer.phone,
+            isActive: true,
           },
-          include: { customer: true },
+          include: {
+            customer: true,
+            company: { select: { id: true, name: true, logoUrl: true } },
+          },
         });
       }
     }
 
     if (!client) {
-      return NextResponse.json({ error: 'Client session not found.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Client session not found. Please log in.' },
+        { status: 401 }
+      );
+    }
+
+    if (client.isActive === false) {
+      return NextResponse.json(
+        { error: 'Your client account is inactive or suspended.' },
+        { status: 403 }
+      );
     }
 
     return NextResponse.json({ client });
@@ -60,10 +81,17 @@ export async function PATCH(request: NextRequest) {
 
     let client = clientIdCookie
       ? await db.clientAccount.findUnique({ where: { id: clientIdCookie } })
-      : await db.clientAccount.findFirst();
+      : await db.clientAccount.findFirst({ where: { isActive: true } });
 
     if (!client) {
       return NextResponse.json({ error: 'Client session not found.' }, { status: 401 });
+    }
+
+    if (client.isActive === false) {
+      return NextResponse.json(
+        { error: 'Your client account is inactive.' },
+        { status: 403 }
+      );
     }
 
     const updatedClient = await db.clientAccount.update({
@@ -73,7 +101,10 @@ export async function PATCH(request: NextRequest) {
         phone: body.phone !== undefined ? body.phone : undefined,
         email: body.email !== undefined ? body.email : undefined,
       },
-      include: { customer: true },
+      include: {
+        customer: true,
+        company: { select: { id: true, name: true, logoUrl: true } },
+      },
     });
 
     return NextResponse.json({ client: updatedClient });

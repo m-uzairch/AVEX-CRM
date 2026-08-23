@@ -86,12 +86,17 @@ export const ROLE_ALLOWED_ROUTES: Record<UserRole, string[]> = {
     '/notifications',
   ],
   CLIENT: [
-    '/dashboard',
-    '/projects',
-    '/quotations',
-    '/invoices',
-    '/payments',
-    '/notifications',
+    '/portal',
+    '/portal/projects',
+    '/portal/quotations',
+    '/portal/invoices',
+    '/portal/requests',
+    '/portal/change-requests',
+    '/portal/meetings',
+    '/portal/files',
+    '/portal/communication',
+    '/portal/messages',
+    '/portal/profile',
   ],
 };
 

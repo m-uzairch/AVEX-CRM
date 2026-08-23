@@ -824,6 +824,7 @@ model Project {
   archiveRecords      ArchiveRecord[]
   invoices            Invoice[]
   expenses            Expense[]
+  payments            InvoicePayment[]
 
   @@unique([companyId, projectCode])
   @@index([companyId])
