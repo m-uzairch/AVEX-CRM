@@ -29,6 +29,7 @@ import {
   Building2,
   Percent,
   Repeat,
+  ExternalLink,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -112,27 +113,45 @@ export function Sidebar({
           isMobileOpen ? 'translate-x-0 w-60' : '-translate-x-full lg:translate-x-0',
         )}
       >
-        {/* Sidebar Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-border">
-          <Link href="/dashboard" className="flex items-center space-x-3 overflow-hidden">
-            <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-xs">
-              <Building2 className="h-5 w-5" />
-            </div>
-            {(!isCollapsed || isMobileOpen) && (
-              <div className="flex flex-col truncate">
-                <span className="font-bold text-sm tracking-tight text-foreground">{APP_NAME}</span>
-                <span className="text-[10px] text-muted-foreground font-mono">{APP_VERSION}</span>
-              </div>
-            )}
-          </Link>
-          <button
-            onClick={onToggleCollapse}
-            className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
-            type="button"
-            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-          </button>
+        {/* Sidebar Header with collision-free collapsed state */}
+        <div
+          className={cn(
+            'flex h-16 items-center border-b border-border transition-all duration-200',
+            isCollapsed ? 'justify-center px-0' : 'justify-between px-4'
+          )}
+        >
+          {isCollapsed ? (
+            <button
+              onClick={onToggleCollapse}
+              className="group relative flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 hover:bg-primary text-primary hover:text-primary-foreground transition-all duration-200 shadow-2xs"
+              type="button"
+              title="Expand sidebar"
+              aria-label="Expand sidebar"
+            >
+              <Building2 className="h-5 w-5 block group-hover:hidden transition-transform" />
+              <ChevronRight className="h-5 w-5 hidden group-hover:block transition-transform" />
+            </button>
+          ) : (
+            <>
+              <Link href="/dashboard" className="flex items-center space-x-3 overflow-hidden">
+                <div className="h-8 w-8 shrink-0 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold shadow-xs">
+                  <Building2 className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col truncate">
+                  <span className="font-bold text-sm tracking-tight text-foreground">{APP_NAME}</span>
+                  <span className="text-[10px] text-muted-foreground font-mono">{APP_VERSION}</span>
+                </div>
+              </Link>
+              <button
+                onClick={onToggleCollapse}
+                className="hidden lg:flex h-7 w-7 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+                type="button"
+                aria-label="Collapse sidebar"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+            </>
+          )}
         </div>
 
         {/* Role Filtered Navigation Items */}
@@ -146,6 +165,7 @@ export function Sidebar({
                 onClick={onCloseMobile}
                 className={cn(
                   'flex items-center space-x-3 px-3 py-2 rounded-md text-xs font-medium transition-colors relative group',
+                  isCollapsed && 'justify-center px-2',
                   isActive
                     ? 'bg-primary text-primary-foreground font-semibold shadow-xs'
                     : 'text-muted-foreground hover:bg-accent hover:text-foreground',
@@ -167,10 +187,36 @@ export function Sidebar({
               </Link>
             );
           })}
+
+          {/* Client Portal Quick Switch Notice if in Client Role */}
+          {role === 'CLIENT' && (
+            <div className={cn('py-4 space-y-2', isCollapsed ? 'px-1 text-center' : 'px-2')}>
+              <div className="rounded-lg border border-primary/20 bg-primary/5 p-2.5 text-xs text-muted-foreground">
+                {!isCollapsed && <p className="font-semibold text-foreground mb-1">Client Portal View</p>}
+                {!isCollapsed && <p className="text-[11px] mb-2">You are in Client Mode.</p>}
+                <Link
+                  href="/portal"
+                  className={cn(
+                    'inline-flex items-center justify-center rounded-md bg-primary text-primary-foreground text-xs font-semibold hover:bg-primary/90 transition-colors',
+                    isCollapsed ? 'h-8 w-8 p-0' : 'w-full px-3 py-1.5 space-x-1.5'
+                  )}
+                  title="Open Client Portal"
+                >
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  {!isCollapsed && <span>Open Portal</span>}
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer Profile Summary */}
-        <div className="p-3 border-t border-border flex items-center space-x-3 overflow-hidden">
+        <div
+          className={cn(
+            'border-t border-border flex items-center overflow-hidden transition-all duration-200',
+            isCollapsed ? 'p-2 justify-center' : 'p-3 space-x-3'
+          )}
+        >
           <div className="h-8 w-8 shrink-0 rounded-full bg-muted border border-border flex items-center justify-center font-bold text-xs text-foreground">
             {initials}
           </div>

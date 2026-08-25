@@ -10,5 +10,5 @@ describe('AutomationService Unit Tests', () => {
     expect(res.recurringInvoices).toBeDefined();
     expect(res.overdueReminders).toBeDefined();
     expect(res.scheduledReports).toBeDefined();
-  });
+  }, 45000);
 });

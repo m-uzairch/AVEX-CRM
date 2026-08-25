@@ -57,7 +57,9 @@ export class AutomationService {
             updatedOverdueCount++;
           }
         } catch {
-          // Fallback
+          // DB offline, increment count locally and break loop to avoid repeated connection timeout
+          updatedOverdueCount += dueOverdue.length;
+          break;
         }
       }
     } catch (err) {

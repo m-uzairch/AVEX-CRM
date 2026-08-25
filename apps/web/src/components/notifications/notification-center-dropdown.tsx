@@ -1,25 +1,64 @@
 'use client';
 
 import * as React from 'react';
-import { useNotificationStore } from '@/stores/notification-store';
-import { MOCK_NOTIFICATIONS, NotificationItemData } from '@/features/dashboard/mock-data';
-import { Bell, Check, Sparkles, Mail, X } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { NotificationService } from '@/features/notifications/services/notification-service';
+import { CRMNotification } from '@/features/notifications/types/notification-types';
+import { Bell, Check, Sparkles, X, ExternalLink, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export function NotificationCenterDropdown() {
-  const { notifications: liveNotifications, markAllRead, dismissNotification } = useNotificationStore();
-  const [mockNotifications, setMockNotifications] = React.useState<NotificationItemData[]>(MOCK_NOTIFICATIONS);
+  const router = useRouter();
+  const [notifications, setNotifications] = React.useState<CRMNotification[]>([]);
+  const [unreadCount, setUnreadCount] = React.useState(0);
   const [isOpen, setIsOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
-  // Merge live notifications with mock notifications
-  const allNotifications = [...liveNotifications, ...mockNotifications];
-  const unreadCount = allNotifications.filter((n) => n.unread).length;
+  const loadNotifications = React.useCallback(async () => {
+    try {
+      const data = await NotificationService.getNotifications();
+      setNotifications(data.notifications.slice(0, 6)); // Top 6 for dropdown
+      setUnreadCount(data.kpis.unreadCount);
+    } catch {
+      // Fallback
+    }
+  }, []);
 
-  const handleMarkAllRead = () => {
-    markAllRead();
-    setMockNotifications((prev) => prev.map((n) => ({ ...n, unread: false })));
+  React.useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await NotificationService.markAllAsRead();
+      setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString() })));
+      setUnreadCount(0);
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleDismiss = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      await NotificationService.dismiss(id);
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch {
+      // Fallback
+    }
+  };
+
+  const handleItemClick = (n: CRMNotification) => {
+    if (!n.readAt) {
+      NotificationService.toggleRead(n.id, true).catch(() => {});
+    }
+    setIsOpen(false);
+    if (n.link) {
+      router.push(n.link);
+    }
   };
 
   React.useEffect(() => {
@@ -30,11 +69,12 @@ export function NotificationCenterDropdown() {
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
+      loadNotifications();
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, loadNotifications]);
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>
@@ -54,13 +94,14 @@ export function NotificationCenterDropdown() {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-80 rounded-lg border border-border bg-card p-3 shadow-lg ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95">
-          <div className="flex items-center justify-between pb-2 border-b border-border mb-2">
+        <div className="absolute right-0 z-50 mt-2 w-84 sm:w-96 rounded-xl border border-border bg-card p-3 shadow-xl ring-1 ring-black/5 animate-in fade-in-0 zoom-in-95">
+          {/* Dropdown Header */}
+          <div className="flex items-center justify-between pb-2.5 border-b border-border mb-2">
             <div className="flex items-center space-x-1.5">
               <Sparkles className="h-4 w-4 text-primary" />
               <span className="text-xs font-bold text-foreground">Notifications</span>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-primary/10 text-primary px-1.5 py-0.5 text-[10px] font-bold">
+                <span className="rounded-full bg-primary/10 text-primary px-2 py-0.5 text-[10px] font-bold">
                   {unreadCount} new
                 </span>
               )}
@@ -70,51 +111,79 @@ export function NotificationCenterDropdown() {
                 variant="ghost"
                 size="sm"
                 onClick={handleMarkAllRead}
-                className="h-6 text-[10px] px-2"
+                className="h-6 text-[10px] px-2 text-muted-foreground hover:text-foreground"
               >
                 <Check className="h-3 w-3 mr-1" /> Mark Read
               </Button>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto space-y-1.5">
-            {allNotifications.length === 0 && (
-              <div className="py-6 text-center text-muted-foreground text-xs">
-                No notifications yet.
+          {/* List Items */}
+          <div className="max-h-80 overflow-y-auto space-y-1.5 scrollbar-thin">
+            {notifications.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground text-xs">
+                No notifications right now.
               </div>
-            )}
-            {allNotifications.map((n) => (
-              <div
-                key={n.id}
-                className={cn(
-                  'p-2.5 rounded-md border text-xs space-y-1 transition-colors group relative',
-                  n.unread ? 'bg-primary/5 border-primary/20' : 'bg-card border-border',
-                )}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold text-foreground flex items-center gap-1.5">
-                    {n.unread && <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
-                    {n.title.includes('Email') || n.title.includes('email') ? (
-                      <Mail className="h-3 w-3 text-blue-500 shrink-0" />
-                    ) : null}
-                    {n.title}
-                  </span>
-                  <div className="flex items-center gap-1">
-                    <span className="text-[10px] text-muted-foreground">{n.time}</span>
-                    {/* Only allow dismissing live notifications */}
-                    {liveNotifications.find((ln) => ln.id === n.id) && (
+            ) : (
+              notifications.map((n) => {
+                const isUnread = !n.readAt;
+                return (
+                  <div
+                    key={n.id}
+                    onClick={() => handleItemClick(n)}
+                    className={cn(
+                      'p-2.5 rounded-lg border text-xs space-y-1 transition-all group relative cursor-pointer',
+                      isUnread
+                        ? 'bg-primary/5 border-primary/20 hover:bg-primary/10'
+                        : 'bg-card border-border hover:bg-muted/40'
+                    )}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground flex items-center gap-1.5 truncate">
+                        {isUnread && <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />}
+                        <span className="truncate">{n.title}</span>
+                      </span>
                       <button
-                        onClick={() => dismissNotification(n.id)}
-                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground transition-opacity"
+                        onClick={(e) => handleDismiss(e, n.id)}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-opacity p-0.5 ml-1"
+                        title="Dismiss"
                       >
                         <X className="h-3 w-3" />
                       </button>
+                    </div>
+                    <p className="text-muted-foreground text-[11px] leading-normal line-clamp-2">
+                      {n.message}
+                    </p>
+                    {n.link && (
+                      <div className="text-[10px] text-primary font-medium flex items-center gap-1 pt-0.5">
+                        <span>View</span>
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </div>
                     )}
                   </div>
-                </div>
-                <p className="text-muted-foreground text-[11px] leading-normal">{n.description}</p>
-              </div>
-            ))}
+                );
+              })
+            )}
+          </div>
+
+          {/* Footer with link to /notifications */}
+          <div className="pt-2.5 mt-2 border-t border-border flex items-center justify-between text-xs">
+            <Link
+              href="/settings?tab=notifications"
+              onClick={() => setIsOpen(false)}
+              className="text-muted-foreground hover:text-foreground text-[11px]"
+            >
+              Settings
+            </Link>
+
+            <Link
+              href="/notifications"
+              onClick={() => setIsOpen(false)}
+              className="inline-flex items-center text-primary font-semibold hover:underline text-[11px]"
+            >
+              <span>Notification Center</span>
+              <ArrowRight className="h-3 w-3 ml-1" />
+            </Link>
           </div>
         </div>
       )}

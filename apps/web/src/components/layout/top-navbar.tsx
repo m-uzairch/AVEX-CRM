@@ -54,6 +54,11 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
 
   const handleRoleSwitch = (newRole: UserRole) => {
     updateUser({ role: newRole });
+    if (newRole === 'CLIENT') {
+      router.push('/portal');
+    } else if (pathname.startsWith('/portal')) {
+      router.push('/dashboard');
+    }
   };
 
   const handleLogout = async () => {

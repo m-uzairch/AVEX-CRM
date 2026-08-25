@@ -14,7 +14,18 @@ import { PermissionGuard } from '@/features/rbac/components/permission-guard';
 import { UserManagementService } from '@/features/rbac/services/user-management-service';
 import { UserManagementRecord, UserRole } from '@/features/rbac/types/rbac-types';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
-import { UserPlus, Search, UserCheck, ShieldAlert, CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  UserPlus,
+  Search,
+  UserCheck,
+  ShieldAlert,
+  CheckCircle2,
+  AlertCircle,
+  Key,
+  Copy,
+  Check,
+  ExternalLink,
+} from 'lucide-react';
 
 export default function UserManagementPage() {
   const currentUser = useAuthStore((state) => state.user);
@@ -28,6 +39,15 @@ export default function UserManagementPage() {
   const [inviteName, setInviteName] = React.useState('');
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [inviteRole, setInviteRole] = React.useState<UserRole>('EMPLOYEE');
+  const [tempPassword, setTempPassword] = React.useState('');
+  const [createdCredentials, setCreatedCredentials] = React.useState<{
+    name: string;
+    email: string;
+    role: string;
+    password?: string;
+    loginUrl: string;
+  } | null>(null);
+  const [copied, setCopied] = React.useState(false);
 
   const loadUsers = React.useCallback(async () => {
     const list = await UserManagementService.getUsers();
@@ -37,6 +57,15 @@ export default function UserManagementPage() {
   React.useEffect(() => {
     loadUsers();
   }, [loadUsers]);
+
+  const generateRandomPassword = () => {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+    let pwd = '';
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setTempPassword(pwd);
+  };
 
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,15 +77,38 @@ export default function UserManagementPage() {
         email: inviteEmail,
         role: inviteRole,
       });
-      setSuccessMsg(`Invitation sent to ${inviteEmail}`);
+
+      const loginUrl =
+        inviteRole === 'CLIENT'
+          ? `${window.location.origin}/portal/login`
+          : `${window.location.origin}/login`;
+
+      setCreatedCredentials({
+        name: inviteName,
+        email: inviteEmail,
+        role: inviteRole,
+        password: tempPassword || 'Generated during first sign in',
+        loginUrl,
+      });
+
+      setSuccessMsg(`Created user account for ${inviteEmail}`);
       setIsInviteOpen(false);
       setInviteName('');
       setInviteEmail('');
       setInviteRole('EMPLOYEE');
+      setTempPassword('');
       loadUsers();
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Failed to send invitation.');
     }
+  };
+
+  const copyCredentials = () => {
+    if (!createdCredentials) return;
+    const text = `AVEX CRM Login Credentials\nName: ${createdCredentials.name}\nEmail: ${createdCredentials.email}\nRole: ${createdCredentials.role}\nPassword: ${createdCredentials.password}\nLogin URL: ${createdCredentials.loginUrl}`;
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 3000);
   };
 
   const handleToggleStatus = async (user: UserManagementRecord) => {
@@ -98,10 +150,10 @@ export default function UserManagementPage() {
       fallback={
         <ContentContainer>
           <div className="flex flex-col items-center justify-center p-12 text-center border border-border rounded-lg bg-card">
-            <ShieldAlert className="h-12 w-12 text-destructive mb-3" />
+            <ShieldAlert className="h-12 w-12 text-destructive mb-4" />
             <h2 className="text-lg font-bold">Access Restricted</h2>
-            <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-              You must have Company Owner or Admin permissions to access the User Management page.
+            <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+              You do not have permission to view or manage user accounts. Contact your Company Owner or Administrator.
             </p>
           </div>
         </ContentContainer>
@@ -109,74 +161,146 @@ export default function UserManagementPage() {
     >
       <ContentContainer>
         <PageHeader
-          title="User Management & Team Members"
-          description="Manage workspace users, assign role permissions, and invite team members."
+          title="User & Credential Management"
+          description="Manage workspace users, assign role permissions, and generate login credentials for team members & clients."
           breadcrumbs={[{ label: 'Settings', href: '/settings' }, { label: 'Users' }]}
           actions={
-            <Button onClick={() => setIsInviteOpen(true)} size="sm">
+            <Button size="sm" onClick={() => setIsInviteOpen(true)}>
               <UserPlus className="h-4 w-4 mr-1.5" />
-              Invite Team Member
+              Create / Invite User
             </Button>
           }
         />
 
         {errorMsg && (
-          <div className="flex items-center space-x-2 rounded-md bg-destructive/15 p-3 text-xs text-destructive">
+          <div className="flex items-center space-x-2 rounded-lg bg-destructive/15 p-3 text-xs text-destructive">
             <AlertCircle className="h-4 w-4 shrink-0" />
             <span>{errorMsg}</span>
           </div>
         )}
 
         {successMsg && (
-          <div className="flex items-center space-x-2 rounded-md bg-success/15 p-3 text-xs text-success">
+          <div className="flex items-center space-x-2 rounded-lg bg-emerald-500/15 p-3 text-xs text-emerald-600 dark:text-emerald-400">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>{successMsg}</span>
           </div>
         )}
 
+        {/* Credentials Card Display after Creation */}
+        {createdCredentials && (
+          <Card className="border-primary/40 bg-primary/5">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Key className="h-4 w-4 text-primary" />
+                  <CardTitle className="text-sm font-semibold">User Credentials Generated</CardTitle>
+                </div>
+                <Button size="sm" variant="outline" onClick={copyCredentials} className="h-8 text-xs">
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1 text-emerald-500" />
+                      Copied
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      Copy Credentials
+                    </>
+                  )}
+                </Button>
+              </div>
+              <CardDescription className="text-xs">
+                Provide these credentials to the user to sign in to their designated portal.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-background/80 p-3 rounded-lg border border-border text-xs">
+                <div>
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Email</span>
+                  <span className="font-medium text-foreground">{createdCredentials.email}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Role</span>
+                  <Badge variant={roleVariantMap[createdCredentials.role as UserRole]} className="mt-0.5 text-[10px]">
+                    {createdCredentials.role}
+                  </Badge>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Password</span>
+                  <span className="font-mono text-foreground font-semibold">{createdCredentials.password}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[10px] uppercase font-bold">Portal URL</span>
+                  <a
+                    href={createdCredentials.loginUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-primary hover:underline flex items-center mt-0.5 truncate"
+                  >
+                    <span>{createdCredentials.loginUrl.replace('http://', '')}</span>
+                    <ExternalLink className="h-3 w-3 ml-1 shrink-0" />
+                  </a>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between pb-4 space-y-2 sm:space-y-0">
-            <div>
-              <CardTitle className="text-base font-semibold">Active Members & Invitations</CardTitle>
-              <CardDescription>Company workspace users and permission status.</CardDescription>
-            </div>
-            <div className="relative max-w-xs w-full">
-              <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search member name or email..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-8 text-xs bg-background"
-              />
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base font-bold">Workspace Members</CardTitle>
+                <CardDescription className="text-xs">
+                  {users.length} total active and invited user accounts.
+                </CardDescription>
+              </div>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by name or email..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-9 text-xs"
+                />
+              </div>
             </div>
           </CardHeader>
+
           <CardContent className="p-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User Member</TableHead>
+                  <TableHead>User</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead>Joined / Invited</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredUsers.map((u) => {
-                  const isSelf = currentUser?.email === u.email;
                   const isOwner = u.role === 'COMPANY_OWNER';
+                  const isSelf = u.id === currentUser?.id;
+                  const initials = u.fullName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .substring(0, 2);
+
                   return (
                     <TableRow key={u.id}>
-                      <TableCell className="font-medium">
+                      <TableCell>
                         <div className="flex items-center space-x-3">
-                          <Avatar fallback={u.fullName} size="sm" />
+                          <Avatar fallback={initials} size="sm" />
                           <div>
-                            <div className="font-semibold text-sm flex items-center space-x-1.5">
+                            <div className="font-semibold text-xs text-foreground flex items-center space-x-1.5">
                               <span>{u.fullName}</span>
                               {isSelf && (
-                                <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.2 rounded-full font-mono">
+                                <Badge variant="outline" className="text-[10px] py-0 px-1 font-mono">
                                   You
-                                </span>
+                                </Badge>
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">{u.email}</div>
@@ -234,12 +358,12 @@ export default function UserManagementPage() {
           </CardContent>
         </Card>
 
-        {/* Invite User Dialog */}
+        {/* Invite / Create User Dialog */}
         <Dialog
           isOpen={isInviteOpen}
           onClose={() => setIsInviteOpen(false)}
-          title="Invite Team Member"
-          description="Send an invitation link to a new team member or client."
+          title="Create / Invite User"
+          description="Assign a role and configure credentials for a team member or client."
         >
           <form onSubmit={handleInviteSubmit} className="space-y-4">
             <div className="space-y-1.5">
@@ -272,10 +396,38 @@ export default function UserManagementPage() {
                 onChange={(e) => setInviteRole(e.target.value as UserRole)}
                 className="w-full bg-background border border-border rounded-md px-3 py-2 text-xs font-medium focus:outline-hidden"
               >
-                <option value="ADMIN">Admin — Full operational access</option>
-                <option value="EMPLOYEE">Employee — Assigned tasks & attendance</option>
-                <option value="CLIENT">Client — Client portal access only</option>
+                <option value="ADMIN">Admin — Full CRM operations & user control</option>
+                <option value="EMPLOYEE">Employee — Tasks, attendance & project delivery</option>
+                <option value="CLIENT">Client — Dedicated Client Portal access (/portal)</option>
               </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-medium text-foreground">Temporary Password (Optional)</label>
+                <button
+                  type="button"
+                  onClick={generateRandomPassword}
+                  className="text-[11px] text-primary hover:underline"
+                >
+                  Generate Random
+                </button>
+              </div>
+              <Input
+                placeholder="Auto-generated if left empty"
+                value={tempPassword}
+                onChange={(e) => setTempPassword(e.target.value)}
+                className="h-9 text-xs font-mono"
+              />
+            </div>
+
+            <div className="rounded-md bg-muted p-2.5 text-[11px] text-muted-foreground space-y-1">
+              <p className="font-semibold text-foreground">Sign-In Destination:</p>
+              {inviteRole === 'CLIENT' ? (
+                <p>Clients sign in via the Client Portal at <code className="text-primary font-mono">/portal/login</code>.</p>
+              ) : (
+                <p>Staff/Admins sign in via the main portal at <code className="text-primary font-mono">/login</code>.</p>
+              )}
             </div>
 
             <div className="flex justify-end space-x-2 pt-2">
@@ -289,7 +441,7 @@ export default function UserManagementPage() {
               </Button>
               <Button type="submit" size="sm">
                 <UserCheck className="h-4 w-4 mr-1" />
-                Send Invitation
+                Create Account & Credentials
               </Button>
             </div>
           </form>

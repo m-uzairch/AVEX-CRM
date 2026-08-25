@@ -2,7 +2,7 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  transpilePackages: ['@avex/types', '@avex/constants'],
+  transpilePackages: ['@avex/types', '@avex/constants', '@avex/database'],
   eslint: {
     ignoreDuringBuilds: true,
   },

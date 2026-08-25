@@ -35,7 +35,8 @@ export async function middleware(request: NextRequest) {
     (route) => pathname === route || pathname.startsWith(`${route}/`)
   );
 
-  const isAuthenticated = Boolean(user);
+  const authSession = request.cookies.get('auth_session')?.value;
+  const isAuthenticated = Boolean(user) || Boolean(authSession);
   const clientSession = request.cookies.get('client_session')?.value;
   const isPortalRoute = pathname === '/portal' || pathname.startsWith('/portal/');
   const isPortalLogin = pathname === '/portal/login';

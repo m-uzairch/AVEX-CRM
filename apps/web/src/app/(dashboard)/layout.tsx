@@ -14,7 +14,7 @@ export default function DashboardLayout({
   const [isMobileOpen, setIsMobileOpen] = React.useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex">
+    <div className="h-screen h-dvh bg-background text-foreground flex overflow-hidden">
       {/* Sidebar */}
       <Sidebar
         isCollapsed={isCollapsed}
@@ -26,12 +26,12 @@ export default function DashboardLayout({
       {/* Main Content Layout Container */}
       <div
         className={cn(
-          'flex-1 flex flex-col min-w-0 transition-all duration-200 ease-in-out',
+          'flex-1 flex flex-col h-full min-w-0 transition-all duration-200 ease-in-out overflow-hidden',
           isCollapsed ? 'lg:pl-16' : 'lg:pl-60',
         )}
       >
         <TopNavbar onOpenMobileSidebar={() => setIsMobileOpen(true)} />
-        <main className="flex-1 overflow-y-auto">{children}</main>
+        <main className="flex-1 overflow-y-auto min-h-0">{children}</main>
       </div>
     </div>
   );

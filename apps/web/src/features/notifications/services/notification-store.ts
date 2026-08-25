@@ -1,0 +1,82 @@
+import { CRMNotification } from '../types/notification-types';
+
+// In-memory store for CRM notifications (companyId -> CRMNotification[])
+export const memoryNotifications: Record<string, CRMNotification[]> = {
+  comp_001: [
+    {
+      id: 'notif_demo_01',
+      companyId: 'comp_001',
+      userId: 'usr_001',
+      type: 'PAYMENT_RECEIVED',
+      category: 'FINANCE',
+      priority: 'HIGH',
+      title: 'Invoice Payment Received: $14,500.00',
+      message: 'Full payment received from Acme Global Enterprises for Invoice #INV-2026-0042.',
+      link: '/invoices/inv_001',
+      entityType: 'INVOICE',
+      entityId: 'inv_001',
+      readAt: null,
+      createdAt: new Date(Date.now() - 1000 * 60 * 15).toISOString(), // 15 mins ago
+    },
+    {
+      id: 'notif_demo_02',
+      companyId: 'comp_001',
+      userId: 'usr_001',
+      type: 'LEAD_ASSIGNED',
+      category: 'CRM',
+      priority: 'NORMAL',
+      title: 'New High-Value Sales Lead Assigned',
+      message: 'Lead "CloudScale Solutions" (Estimated Deal Value: $45,000) assigned to your queue.',
+      link: '/crm',
+      entityType: 'LEAD',
+      entityId: 'lead_001',
+      readAt: null,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(), // 2 hours ago
+    },
+    {
+      id: 'notif_demo_03',
+      companyId: 'comp_001',
+      userId: 'usr_001',
+      type: 'CLIENT_REQUEST_CREATED',
+      category: 'PORTAL',
+      priority: 'HIGH',
+      title: 'New Client Portal Service Request',
+      message: 'Client submitted a priority request: "Production Cloud Cluster Security Audit".',
+      link: '/projects',
+      entityType: 'PROJECT',
+      entityId: 'proj_001',
+      readAt: null,
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(), // 5 hours ago
+    },
+    {
+      id: 'notif_demo_04',
+      companyId: 'comp_001',
+      userId: 'usr_001',
+      type: 'MEETING_REMINDER',
+      category: 'COMMUNICATION',
+      priority: 'NORMAL',
+      title: 'Upcoming Client Consultation Call',
+      message: 'Consultation session with Sarah Jenkins scheduled for tomorrow at 10:00 AM.',
+      link: '/calendar',
+      entityType: 'MEETING',
+      entityId: 'meet_001',
+      readAt: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(), // 1 day ago
+    },
+    {
+      id: 'notif_demo_05',
+      companyId: 'comp_001',
+      userId: 'usr_001',
+      type: 'TASK_DUE',
+      category: 'PROJECTS',
+      priority: 'URGENT',
+      title: 'Task Milestone Due Today',
+      message: 'Task "Finalize Database Indexing & Encryption Migration" is due by end of day.',
+      link: '/calendar',
+      entityType: 'TASK',
+      entityId: 'task_001',
+      readAt: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
+      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(),
+    },
+  ],
+};
