@@ -198,6 +198,18 @@ enum ExpenseStatus {
   CANCELLED
 }
 
+enum EmploymentStatus {
+  ACTIVE
+  ON_LEAVE
+  TERMINATED
+}
+
+enum StockMovementType {
+  STOCK_IN
+  STOCK_OUT
+  ADJUSTMENT
+}
+
 // ==========================================
 // MODELS
 // ==========================================
@@ -255,6 +267,9 @@ model Company {
   vendors              Vendor[]
   expenses             Expense[]
   financialDashboardPreferences FinancialDashboardPreference[]
+  employees            Employee[]
+  inventoryItems       InventoryItem[]
+  stockMovements       InventoryStockMovement[]
 
   @@map("companies")
 }
@@ -327,6 +342,8 @@ model User {
   createdExpenses          Expense[]                  @relation("ExpenseAuthor")
   updatedExpenses          Expense[]                  @relation("ExpenseUpdater")
   financialDashboardPreference FinancialDashboardPreference?
+  employee                 Employee?                  @relation("EmployeeUserAccount")
+  performedStockMovements  InventoryStockMovement[]   @relation("StockMovementUser")
 
   @@index([companyId])
   @@index([email])
@@ -2002,6 +2019,97 @@ model FinancialDashboardPreference {
   @@index([userId])
   @@map("financial_dashboard_preferences")
 }
+
+// ==========================================
+// EMPLOYEE DIRECTORY MODELS
+// ==========================================
+
+/// Employee model for multi-tenant staff and HR directory
+model Employee {
+  id               String           @id @default(uuid())
+  companyId        String
+  userId           String?          @unique
+  fullName         String
+  email            String
+  phone            String?
+  role             String
+  department       String?
+  employmentStatus EmploymentStatus @default(ACTIVE)
+  hireDate         DateTime?
+  terminationDate  DateTime?
+  avatarUrl        String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  user    User?   @relation("EmployeeUserAccount", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([id, companyId])
+  @@unique([companyId, email])
+  @@index([companyId])
+  @@index([companyId, fullName])
+  @@index([companyId, department])
+  @@index([companyId, employmentStatus])
+  @@index([userId])
+  @@map("employees")
+}
+
+// ==========================================
+// INVENTORY MANAGEMENT MODELS
+// ==========================================
+
+/// InventoryItem model for tracking catalog products and stock
+model InventoryItem {
+  id               String   @id @default(uuid())
+  companyId        String
+  sku              String
+  name             String
+  description      String?
+  category         String?
+  unit             String   @default("pcs")
+  costPrice        Float    @default(0)
+  sellPrice        Float    @default(0)
+  reorderThreshold Int?
+  currentStock     Int      @default(0)
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  company        Company                  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  stockMovements InventoryStockMovement[]
+
+  @@unique([id, companyId])
+  @@unique([companyId, sku])
+  @@index([companyId])
+  @@index([companyId, name])
+  @@index([companyId, category])
+  @@index([companyId, isActive])
+  @@map("inventory_items")
+}
+
+/// InventoryStockMovement model for recording stock ledger changes
+model InventoryStockMovement {
+  id                String            @id @default(uuid())
+  companyId         String
+  itemId            String
+  type              StockMovementType
+  quantity          Int
+  reason            String?
+  performedByUserId String?
+  createdAt         DateTime          @default(now())
+
+  company         Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  item            InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  performedByUser User?         @relation("StockMovementUser", fields: [performedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId])
+  @@index([itemId])
+  @@index([companyId, itemId])
+  @@index([performedByUserId])
+  @@index([createdAt])
+  @@map("inventory_stock_movements")
+}
+
 
 
 

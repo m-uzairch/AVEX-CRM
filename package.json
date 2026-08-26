@@ -12,7 +12,8 @@
     "build": "turbo run build",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "audit:employees-inventory": "npx tsx scratch/functional-audit-employees-inventory.ts"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

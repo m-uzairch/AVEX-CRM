@@ -76,6 +76,7 @@ export const ROLE_ALLOWED_ROUTES: Record<UserRole, string[]> = {
   EMPLOYEE: [
     '/dashboard',
     '/projects',
+    '/employees',
     '/attendance',
     '/quotations',
     '/payments',
