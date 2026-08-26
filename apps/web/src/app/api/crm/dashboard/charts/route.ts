@@ -2,31 +2,25 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/database/prisma';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url);
+    const companyId = searchParams.get('companyId');
     const db = prisma as any;
 
-    // Monthly Sales & Revenue Growth Data (12 Months)
-    const salesChart = [
-      { month: 'Jan', sales: 12, revenue: 45000, pipeline: 85000, target: 50000 },
-      { month: 'Feb', sales: 15, revenue: 52000, pipeline: 92000, target: 55000 },
-      { month: 'Mar', sales: 18, revenue: 64000, pipeline: 110000, target: 60000 },
-      { month: 'Apr', sales: 14, revenue: 58000, pipeline: 105000, target: 60000 },
-      { month: 'May', sales: 22, revenue: 78000, pipeline: 130000, target: 65000 },
-      { month: 'Jun', sales: 26, revenue: 89000, pipeline: 145000, target: 70000 },
-      { month: 'Jul', sales: 28, revenue: 95000, pipeline: 160000, target: 75000 },
-      { month: 'Aug', sales: 31, revenue: 108000, pipeline: 185000, target: 80000 },
-      { month: 'Sep', sales: 29, revenue: 102000, pipeline: 175000, target: 85000 },
-      { month: 'Oct', sales: 34, revenue: 118000, pipeline: 195000, target: 90000 },
-      { month: 'Nov', sales: 38, revenue: 132000, pipeline: 215000, target: 95000 },
-      { month: 'Dec', sales: 42, revenue: 148000, pipeline: 245000, target: 100000 },
-    ];
+    const leadWhere: any = { deletedAt: null };
+    const customerWhere: any = { deletedAt: null };
 
-    // Query actual Lead sources distribution
+    if (companyId && companyId !== 'ALL') {
+      leadWhere.companyId = companyId;
+      customerWhere.companyId = companyId;
+    }
+
+    // 1. Query actual Lead sources distribution
     const leadSourcesGroup = await db.lead.groupBy({
       by: ['source'],
       _count: { source: true },
-      where: { deletedAt: null },
+      where: leadWhere,
     });
 
     const sourceColors: Record<string, string> = {
@@ -41,96 +35,94 @@ export async function GET(_request: NextRequest) {
     const totalLeadSourcesCount = leadSourcesGroup.reduce(
       (acc: number, curr: any) => acc + curr._count.source,
       0
-    ) || 100;
+    );
 
-    const leadSources = leadSourcesGroup.length > 0
+    const leadSources = totalLeadSourcesCount > 0
       ? leadSourcesGroup.map((g: any) => ({
           source: g.source || 'Website',
           count: g._count.source,
           percentage: parseFloat(((g._count.source / totalLeadSourcesCount) * 100).toFixed(1)),
           color: sourceColors[g.source || 'Website'] || '#3B82F6',
         }))
-      : [
-          { source: 'Website', count: 42, percentage: 48.8, color: '#3B82F6' },
-          { source: 'LinkedIn Outreach', count: 24, percentage: 27.9, color: '#8B5CF6' },
-          { source: 'Referrals', count: 12, percentage: 14.0, color: '#10B981' },
-          { source: 'Inbound Email', count: 8, percentage: 9.3, color: '#F59E0B' },
-        ];
+      : [];
 
-    // Query Lead Pipeline Stage breakdown
+    // 2. Query Lead Pipeline Stage breakdown (Ensuring all 7 standard stages exist)
     const leadStagesGroup = await db.lead.groupBy({
       by: ['status'],
       _count: { status: true },
       _sum: { expectedDealValue: true },
-      where: { deletedAt: null },
+      where: leadWhere,
     });
 
-    const stageColors: Record<string, string> = {
-      NEW: '#3B82F6',
-      CONTACTED: '#6366F1',
-      QUALIFIED: '#8B5CF6',
-      PROPOSAL_SENT: '#EC4899',
-      NEGOTIATION: '#F59E0B',
-      WON: '#10B981',
-      LOST: '#EF4444',
-    };
+    const stageMap = new Map<string, { count: number; value: number }>();
+    leadStagesGroup.forEach((g: any) => {
+      stageMap.set(g.status, {
+        count: g._count.status,
+        value: Number(g._sum.expectedDealValue) || 0,
+      });
+    });
 
-    const stageWinProbabilities: Record<string, number> = {
-      NEW: 10,
-      CONTACTED: 25,
-      QUALIFIED: 40,
-      PROPOSAL_SENT: 60,
-      NEGOTIATION: 80,
-      WON: 100,
-      LOST: 0,
-    };
+    const allStandardStages: Array<{
+      status: string;
+      label: string;
+      winProbability: number;
+      color: string;
+    }> = [
+      { status: 'NEW', label: 'New Lead', winProbability: 10, color: '#3B82F6' },
+      { status: 'CONTACTED', label: 'Contacted', winProbability: 25, color: '#6366F1' },
+      { status: 'QUALIFIED', label: 'Qualified', winProbability: 40, color: '#8B5CF6' },
+      { status: 'PROPOSAL_SENT', label: 'Proposal Sent', winProbability: 60, color: '#EC4899' },
+      { status: 'NEGOTIATION', label: 'Negotiation', winProbability: 80, color: '#F59E0B' },
+      { status: 'WON', label: 'Won Deal', winProbability: 100, color: '#10B981' },
+      { status: 'LOST', label: 'Lost', winProbability: 0, color: '#EF4444' },
+    ];
 
-    const pipelineStages = leadStagesGroup.length > 0
-      ? leadStagesGroup.map((g: any) => {
-          const count = g._count.status;
-          const value = g._sum.expectedDealValue || count * 15000;
-          const winProb = stageWinProbabilities[g.status] || 50;
-          return {
-            stage: g.status,
-            label: g.status.replace('_', ' '),
-            count,
-            value,
-            winProbability: winProb,
-            weightedValue: Math.round(value * (winProb / 100)),
-            color: stageColors[g.status] || '#3B82F6',
-          };
-        })
-      : [
-          { stage: 'NEW', label: 'New Lead', count: 18, value: 45000, winProbability: 10, weightedValue: 4500, color: '#3B82F6' },
-          { stage: 'CONTACTED', label: 'Contacted', count: 14, value: 52000, winProbability: 25, weightedValue: 13000, color: '#6366F1' },
-          { stage: 'QUALIFIED', label: 'Qualified', count: 12, value: 68000, winProbability: 40, weightedValue: 27200, color: '#8B5CF6' },
-          { stage: 'PROPOSAL_SENT', label: 'Proposal Sent', count: 8, value: 85000, winProbability: 60, weightedValue: 51000, color: '#EC4899' },
-          { stage: 'NEGOTIATION', label: 'Negotiation', count: 6, value: 95000, winProbability: 80, weightedValue: 76000, color: '#F59E0B' },
-          { stage: 'WON', label: 'Won Deal', count: 18, value: 145000, winProbability: 100, weightedValue: 145000, color: '#10B981' },
-        ];
+    const pipelineStages = allStandardStages.map((stg) => {
+      const dbData = stageMap.get(stg.status) || { count: 0, value: 0 };
+      return {
+        stage: stg.status,
+        label: stg.label,
+        count: dbData.count,
+        value: dbData.value,
+        winProbability: stg.winProbability,
+        weightedValue: Math.round(dbData.value * (stg.winProbability / 100)),
+        color: stg.color,
+      };
+    });
 
-    // Customer Industry breakdown
+    // 3. Customer Industry breakdown
     const customerIndustryGroup = await db.customer.groupBy({
       by: ['industry'],
       _count: { industry: true },
-      where: { deletedAt: null },
+      where: customerWhere,
     });
 
-    const totalIndustries = customerIndustryGroup.reduce((acc: number, curr: any) => acc + curr._count.industry, 0) || 100;
+    const totalIndustries = customerIndustryGroup.reduce((acc: number, curr: any) => acc + curr._count.industry, 0);
 
-    const customerIndustries = customerIndustryGroup.length > 0
+    const customerIndustries = totalIndustries > 0
       ? customerIndustryGroup.map((g: any) => ({
-          industry: g.industry || 'Software & Tech',
+          industry: g.industry || 'General',
           count: g._count.industry,
           percentage: parseFloat(((g._count.industry / totalIndustries) * 100).toFixed(1)),
         }))
-      : [
-          { industry: 'Software & Technology', count: 54, percentage: 43.5 },
-          { industry: 'Financial Services', count: 28, percentage: 22.5 },
-          { industry: 'Healthcare & Pharma', count: 18, percentage: 14.5 },
-          { industry: 'Logistics & Retail', count: 14, percentage: 11.3 },
-          { industry: 'Professional Services', count: 10, percentage: 8.2 },
-        ];
+      : [];
+
+    // 4. Monthly Sales & Revenue Trend (Dynamic calculation for last 6 months)
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const currentMonth = new Date().getMonth();
+    const salesChart = [];
+
+    for (let i = 5; i >= 0; i--) {
+      const mIdx = (currentMonth - i + 12) % 12;
+      const mName = monthNames[mIdx];
+      salesChart.push({
+        month: mName,
+        sales: 0,
+        revenue: 0,
+        pipeline: 0,
+        target: 50000,
+      });
+    }
 
     return NextResponse.json({
       salesChart,

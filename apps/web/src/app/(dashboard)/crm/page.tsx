@@ -173,10 +173,10 @@ export default function CRMDashboardPage() {
         {isWidgetVisible('widget_pipeline') && (
           <PipelineForecastWidget
             stages={charts?.pipelineStages || []}
-            totalPipelineValue={stats?.totalPipelineValue || 245000}
-            revenueForecast={stats?.revenueForecast || 168500}
-            avgDealSize={stats?.avgDealSize || 18500}
-            winRate={stats?.winRate || 35.2}
+            totalPipelineValue={stats?.totalPipelineValue ?? 0}
+            revenueForecast={stats?.revenueForecast ?? 0}
+            avgDealSize={stats?.avgDealSize ?? 0}
+            winRate={stats?.winRate ?? 0}
             isLoading={isLoading}
           />
         )}
@@ -188,7 +188,11 @@ export default function CRMDashboardPage() {
 
         {/* 6. Recent Customers & Recent Leads */}
         {isWidgetVisible('widget_recent_records') && (
-          <RecentRecordsWidget isLoading={isLoading} />
+          <RecentRecordsWidget
+            recentCustomers={stats?.recentCustomers || []}
+            recentLeads={stats?.recentLeads || []}
+            isLoading={isLoading}
+          />
         )}
 
         {/* 7. Upcoming Follow-up Reminders */}

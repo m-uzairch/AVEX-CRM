@@ -27,6 +27,22 @@ export interface DashboardStats {
   lostRate: number;
   revenueForecast: number;
   kpis: KPIMetricItem[];
+  recentCustomers?: Array<{
+    id: string;
+    name: string;
+    companyName: string;
+    status: string;
+    createdAt: string;
+  }>;
+  recentLeads?: Array<{
+    id: string;
+    name: string;
+    companyName: string;
+    status: string;
+    score: number;
+    assignedName?: string;
+    createdAt?: string;
+  }>;
 }
 
 export interface SalesChartPoint {

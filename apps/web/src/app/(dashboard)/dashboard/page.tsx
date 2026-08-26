@@ -20,6 +20,8 @@ export default function DashboardPage() {
 
   const [greeting, setGreeting] = React.useState('Welcome back');
   const [currentDateFormatted, setCurrentDateFormatted] = React.useState('');
+  const [stats, setStats] = React.useState(MOCK_DASHBOARD_STATS);
+  const [isLoadingStats, setIsLoadingStats] = React.useState(true);
 
   React.useEffect(() => {
     // Dynamic Time of Day Greeting calculated on client mount to eliminate SSR timezone mismatch
@@ -40,6 +42,26 @@ export default function DashboardPage() {
       year: 'numeric',
     }).format(new Date());
     setCurrentDateFormatted(formatted);
+
+    // Fetch live synchronized dashboard statistics
+    async function loadStats() {
+      try {
+        setIsLoadingStats(true);
+        const res = await fetch('/api/dashboard/stats');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.stats && Array.isArray(data.stats)) {
+            setStats(data.stats);
+          }
+        }
+      } catch (err) {
+        console.warn('Could not load live dashboard stats:', err);
+      } finally {
+        setIsLoadingStats(false);
+      }
+    }
+
+    loadStats();
   }, []);
 
   const userName = user?.fullName ? user.fullName.split(' ')[0] : 'Uzair';
@@ -68,9 +90,13 @@ export default function DashboardPage() {
 
       {/* 4 Statistics Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {MOCK_DASHBOARD_STATS.map((stat) => (
-          <StatCard key={stat.id} {...stat} />
-        ))}
+        {isLoadingStats && stats.length === 0
+          ? [1, 2, 3, 4].map((i) => (
+              <div key={i} className="animate-pulse bg-muted/40 h-32 rounded-xl border border-border" />
+            ))
+          : stats.map((stat) => (
+              <StatCard key={stat.id} {...stat} />
+            ))}
       </div>
 
       {/* Quick Actions Shortcuts */}

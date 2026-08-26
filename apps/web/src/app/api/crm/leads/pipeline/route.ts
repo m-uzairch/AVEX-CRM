@@ -24,16 +24,7 @@ export async function GET(request: NextRequest) {
 
   const db = prisma as any;
 
-  // Resolve multi-tenant company ID
-  let companyId = searchParams.get('companyId');
-  if (!companyId) {
-    try {
-      const firstComp = await db.company.findFirst({ select: { id: true } });
-      companyId = firstComp?.id || 'comp_001';
-    } catch {
-      companyId = 'comp_001';
-    }
-  }
+  const companyId = searchParams.get('companyId');
 
   try {
     if (!db.lead) {
@@ -52,10 +43,13 @@ export async function GET(request: NextRequest) {
     }
 
     const where: any = {
-      companyId,
       deletedAt: null,
       isArchived: false,
     };
+
+    if (companyId && companyId !== 'ALL') {
+      where.companyId = companyId;
+    }
 
     if (assignedEmployeeId && assignedEmployeeId !== 'ALL') {
       where.assignedEmployeeId = assignedEmployeeId;

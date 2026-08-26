@@ -28,94 +28,28 @@ export const defaultStageDefinitions: Array<{
   { id: 'LOST', name: 'Lost Opportunity', color: 'border-red-500/50 bg-red-500/5', badgeBg: 'bg-red-500/10 text-red-600' },
 ];
 
-const mockInitialLeads: Lead[] = [
-  {
-    id: 'lead_001',
-    companyId: 'comp_001',
-    name: 'Apex Logistics Systems',
-    companyName: 'Apex Logistics',
-    email: 'info@apexlogistics.com',
-    phone: '+1-555-0192',
-    source: 'Website',
-    status: 'NEW',
-    priority: 'HIGH',
-    score: 85,
-    winProbability: 40,
-    stageOrder: 1,
-    expectedDealValue: 45000,
-    tags: ['Logistics', 'Enterprise'],
-    isConverted: false,
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'lead_002',
-    companyId: 'comp_001',
-    name: 'Vance Cyber Security',
-    companyName: 'Vance Security',
-    email: 'contact@vancesecurity.io',
-    phone: '+1-555-0143',
-    source: 'LinkedIn Outreach',
-    status: 'QUALIFIED',
-    priority: 'URGENT',
-    score: 92,
-    winProbability: 75,
-    stageOrder: 2,
-    expectedDealValue: 85000,
-    tags: ['Cybersecurity', 'Hot Deal'],
-    isConverted: false,
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'lead_003',
-    companyId: 'comp_001',
-    name: 'Nexus Cloud Infrastructure',
-    companyName: 'Nexus Global',
-    email: 'sales@nexuscloud.com',
-    phone: '+1-555-0188',
-    source: 'Inbound Email',
-    status: 'PROPOSAL_SENT',
-    priority: 'MEDIUM',
-    score: 64,
-    winProbability: 60,
-    stageOrder: 3,
-    expectedDealValue: 62000,
-    tags: ['Cloud Services'],
-    isConverted: false,
-    isArchived: false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-];
+const mockInitialLeads: Lead[] = [];
 
 function getFallbackPipeline(): FetchPipelineResponse {
   const columns = defaultStageDefinitions.map((stage) => {
-    const stageLeads = mockInitialLeads.filter((l) => l.status === stage.id);
-    const totalValue = stageLeads.reduce((sum, l) => sum + (l.expectedDealValue || 0), 0);
     return {
       ...stage,
-      leads: stageLeads,
-      totalValue,
-      leadCount: stageLeads.length,
+      leads: [],
+      totalValue: 0,
+      leadCount: 0,
     };
   });
-
-  const totalLeads = mockInitialLeads.length;
-  const totalPipelineValue = mockInitialLeads.reduce((sum, l) => sum + (l.expectedDealValue || 0), 0);
 
   return {
     success: true,
     columns,
     metrics: {
-      totalLeads,
-      totalPipelineValue,
+      totalLeads: 0,
+      totalPipelineValue: 0,
       wonDealsCount: 0,
       lostDealsCount: 0,
-      averageDealSize: Math.round(totalPipelineValue / (totalLeads || 1)),
-      conversionRate: 35,
+      averageDealSize: 0,
+      conversionRate: 0,
     },
   };
 }

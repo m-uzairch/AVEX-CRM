@@ -6,7 +6,7 @@ import { customerFormSchema } from '@/features/crm/schemas/customer-schemas';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const companyId = searchParams.get('companyId') || 'comp_001';
+    const companyId = searchParams.get('companyId');
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status');
     const industry = searchParams.get('industry');
@@ -17,9 +17,11 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1', 10);
     const pageSize = parseInt(searchParams.get('pageSize') || '10', 10);
 
-    console.log(`[API GET /api/crm/customers] CompanyID: ${companyId}, Search: "${search}"`);
+    const where: any = {};
 
-    const where: any = { companyId };
+    if (companyId && companyId !== 'ALL') {
+      where.companyId = companyId;
+    }
 
     if (isDeleted) {
       where.deletedAt = { not: null };
@@ -71,71 +73,6 @@ export async function GET(request: NextRequest) {
       }
     } catch (dbErr) {
       console.warn('[API GET /api/crm/customers] DB query notice:', dbErr);
-    }
-
-    if (customers.length === 0) {
-      const fallbackCustomers = [
-        {
-          id: 'cust_001',
-          companyId,
-          name: 'Sarah Connor',
-          companyName: 'Cyberdyne Systems',
-          email: 'sarah@cyberdyne.io',
-          phone: '+1 (555) 019-2834',
-          country: 'United States',
-          city: 'Los Angeles',
-          state: 'CA',
-          industry: 'Artificial Intelligence',
-          status: 'ACTIVE',
-          priority: 'HIGH',
-          tags: ['VIP', 'Enterprise'],
-          isArchived: false,
-          deletedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'cust_002',
-          companyId,
-          name: 'Bruce Wayne',
-          companyName: 'Wayne Enterprises',
-          email: 'bruce@wayne.com',
-          phone: '+1 (555) 948-2049',
-          country: 'United States',
-          city: 'Gotham',
-          state: 'NY',
-          industry: 'Defense & Aerospace',
-          status: 'ACTIVE',
-          priority: 'URGENT',
-          tags: ['Key Account', 'Enterprise'],
-          isArchived: false,
-          deletedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: 'cust_003',
-          companyId,
-          name: 'Tony Stark',
-          companyName: 'Stark Industries',
-          email: 'tony@stark.com',
-          phone: '+1 (555) 300-3000',
-          country: 'United States',
-          city: 'Malibu',
-          state: 'CA',
-          industry: 'Clean Energy & Tech',
-          status: 'ACTIVE',
-          priority: 'HIGH',
-          tags: ['Global', 'High-Value'],
-          isArchived: false,
-          deletedAt: null,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
-
-      customers = fallbackCustomers;
-      total = fallbackCustomers.length;
     }
 
     const totalPages = Math.ceil(total / pageSize) || 1;

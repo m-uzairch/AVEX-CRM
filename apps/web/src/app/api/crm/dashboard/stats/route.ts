@@ -17,6 +17,12 @@ export async function GET(request: NextRequest) {
     const customerWhere: any = { deletedAt: null, isArchived: false };
     const leadWhere: any = { deletedAt: null, isArchived: false };
 
+    const companyId = searchParams.get('companyId');
+    if (companyId && companyId !== 'ALL') {
+      customerWhere.companyId = companyId;
+      leadWhere.companyId = companyId;
+    }
+
     if (employeeId && employeeId !== 'ALL') {
       customerWhere.assignedEmployeeId = employeeId;
       leadWhere.assignedEmployeeId = employeeId;
@@ -65,6 +71,8 @@ export async function GET(request: NextRequest) {
       wonDeals,
       lostDeals,
       leadsList,
+      recentCustomersRaw,
+      recentLeadsRaw,
     ] = await Promise.all([
       db.customer.count({ where: customerWhere }),
       db.customer.count({ where: { ...customerWhere, status: 'ACTIVE' } }),
@@ -81,87 +89,136 @@ export async function GET(request: NextRequest) {
         where: leadWhere,
         select: { expectedDealValue: true, winProbability: true, status: true },
       }),
+      db.customer.findMany({
+        where: customerWhere,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        select: { id: true, name: true, companyName: true, status: true, createdAt: true },
+      }),
+      db.lead.findMany({
+        where: leadWhere,
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: {
+          assignedEmployee: {
+            select: { fullName: true },
+          },
+        },
+      }),
     ]);
 
-    const conversionRate = totalLeads > 0 ? parseFloat(((wonDeals / totalLeads) * 100).toFixed(1)) : 24.8;
-    const winRate = totalLeads > 0 ? parseFloat(((wonDeals / totalLeads) * 100).toFixed(1)) : 35.2;
-    const lostRate = totalLeads > 0 ? parseFloat(((lostDeals / totalLeads) * 100).toFixed(1)) : 12.4;
+    const conversionRate = totalLeads > 0 ? parseFloat(((wonDeals / totalLeads) * 100).toFixed(1)) : 0;
+    const winRate = totalLeads > 0 ? parseFloat(((wonDeals / totalLeads) * 100).toFixed(1)) : 0;
+    const lostRate = totalLeads > 0 ? parseFloat(((lostDeals / totalLeads) * 100).toFixed(1)) : 0;
 
     let totalPipelineValue = 0;
     let revenueForecast = 0;
 
     leadsList.forEach((l: any) => {
-      const val = l.expectedDealValue || 0;
-      const prob = (l.winProbability || 50) / 100;
+      const val = Number(l.expectedDealValue) || 0;
+      const prob = (Number(l.winProbability) || 50) / 100;
       if (l.status !== 'LOST') {
         totalPipelineValue += val;
         revenueForecast += val * prob;
       }
     });
 
-    if (totalPipelineValue === 0) {
-      totalPipelineValue = 245000;
-      revenueForecast = 168500;
-    }
+    const avgDealSize = wonDeals > 0
+      ? Math.round(totalPipelineValue / wonDeals)
+      : totalLeads > 0
+      ? Math.round(totalPipelineValue / totalLeads)
+      : 0;
 
-    const avgDealSize = wonDeals > 0 ? Math.round(totalPipelineValue / wonDeals) : 18500;
+    const formattedPipelineValue =
+      totalPipelineValue >= 1000000
+        ? `$${(totalPipelineValue / 1000000).toFixed(1)}M`
+        : totalPipelineValue >= 1000
+        ? `$${(totalPipelineValue / 1000).toFixed(0)}k`
+        : `$${totalPipelineValue}`;
+
+    const formattedRevenueForecast =
+      revenueForecast >= 1000000
+        ? `$${(revenueForecast / 1000000).toFixed(1)}M`
+        : revenueForecast >= 1000
+        ? `$${(revenueForecast / 1000).toFixed(0)}k`
+        : `$${Math.round(revenueForecast)}`;
+
+    const recentCustomers = recentCustomersRaw.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      companyName: c.companyName,
+      status: c.status,
+      createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
+    }));
+
+    const recentLeads = recentLeadsRaw.map((l: any) => ({
+      id: l.id,
+      name: l.name,
+      companyName: l.companyName,
+      status: l.status,
+      score: l.score ?? 50,
+      assignedName: l.assignedEmployee?.fullName || 'Unassigned',
+      createdAt: l.createdAt instanceof Date ? l.createdAt.toISOString() : String(l.createdAt),
+    }));
 
     const stats = {
-      totalCustomers: totalCustomers || 124,
-      activeCustomers: activeCustomers || 98,
-      totalLeads: totalLeads || 86,
-      qualifiedLeads: qualifiedLeads || 42,
-      wonDeals: wonDeals || 18,
-      lostDeals: lostDeals || 6,
+      totalCustomers: totalCustomers ?? 0,
+      activeCustomers: activeCustomers ?? 0,
+      totalLeads: totalLeads ?? 0,
+      qualifiedLeads: qualifiedLeads ?? 0,
+      wonDeals: wonDeals ?? 0,
+      lostDeals: lostDeals ?? 0,
       conversionRate,
       totalPipelineValue: Math.round(totalPipelineValue),
       avgDealSize,
       winRate,
       lostRate,
       revenueForecast: Math.round(revenueForecast),
+      recentCustomers,
+      recentLeads,
       kpis: [
         {
           id: 'kpi_cust',
           title: 'Total Customers',
-          value: totalCustomers || 124,
-          percentageChange: 12.4,
-          trend: 'up',
+          value: totalCustomers,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'Users',
           description: 'Active company client profiles',
         },
         {
           id: 'kpi_active_cust',
           title: 'Active Accounts',
-          value: activeCustomers || 98,
-          percentageChange: 8.7,
-          trend: 'up',
+          value: activeCustomers,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'UserCheck',
           description: 'Paying active subscription accounts',
         },
         {
           id: 'kpi_leads',
           title: 'Total Leads',
-          value: totalLeads || 86,
-          percentageChange: 15.2,
-          trend: 'up',
+          value: totalLeads,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'UserPlus',
           description: 'Sales prospects captured',
         },
         {
           id: 'kpi_qual_leads',
           title: 'Qualified Pipeline',
-          value: qualifiedLeads || 42,
-          percentageChange: 9.3,
-          trend: 'up',
+          value: qualifiedLeads,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'CheckCircle2',
           description: 'High score qualified leads',
         },
         {
           id: 'kpi_won',
           title: 'Won Deals',
-          value: wonDeals || 18,
-          percentageChange: 22.1,
-          trend: 'up',
+          value: wonDeals,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'Trophy',
           description: 'Closed won deals',
         },
@@ -169,26 +226,26 @@ export async function GET(request: NextRequest) {
           id: 'kpi_conversion',
           title: 'Conversion Rate',
           value: `${conversionRate}%`,
-          percentageChange: 2.3,
-          trend: 'up',
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'TrendingUp',
           description: 'Lead to customer conversion ratio',
         },
         {
           id: 'kpi_pipeline',
           title: 'Pipeline Value',
-          value: `$${(totalPipelineValue / 1000).toFixed(0)}k`,
-          percentageChange: 14.8,
-          trend: 'up',
+          value: formattedPipelineValue,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'DollarSign',
           description: 'Active pipeline deal revenue',
         },
         {
           id: 'kpi_forecast',
           title: 'Revenue Forecast',
-          value: `$${(revenueForecast / 1000).toFixed(0)}k`,
-          percentageChange: 11.2,
-          trend: 'up',
+          value: formattedRevenueForecast,
+          percentageChange: 0,
+          trend: 'neutral' as const,
           iconName: 'Sparkles',
           description: 'Weighted probability projection',
         },
