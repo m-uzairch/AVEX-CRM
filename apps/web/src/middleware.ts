@@ -9,6 +9,7 @@ const protectedRoutes = [
   '/attendance',
   '/quotations',
   '/invoices',
+  '/finance',
   '/payments',
   '/expenses',
   '/financial-dashboard',

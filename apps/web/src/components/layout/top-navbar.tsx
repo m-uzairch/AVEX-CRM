@@ -25,6 +25,7 @@ const pageTitles: Record<string, string> = {
   '/attendance': 'Attendance & Shifts',
   '/quotations': 'Quotations & Estimates',
   '/invoices': 'Invoices & Payments',
+  '/finance': 'Finance & Treasury Hub',
   '/payments': 'Payment Tracking & Receipts',
   '/payments/outstanding': 'Outstanding Invoices & Aging',
   '/expenses': 'Expense Management System',

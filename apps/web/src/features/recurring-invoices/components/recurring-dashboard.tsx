@@ -16,7 +16,11 @@ import {
 import { Plus, Play, TrendingUp, Calendar, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 
-export function RecurringDashboard() {
+interface RecurringDashboardProps {
+  embedded?: boolean;
+}
+
+export function RecurringDashboard({ embedded = false }: RecurringDashboardProps = {}) {
   const toastCtx = useToast();
   const [schedules, setSchedules] = React.useState<RecurringInvoice[]>([]);
   const [summary, setSummary] = React.useState<RecurringInvoiceKPISummary | null>(null);
@@ -73,13 +77,16 @@ export function RecurringDashboard() {
     }
   };
 
-  return (
-    <ContentContainer>
-      <PageHeader
-        title="Recurring Invoices & Billing Automation"
-        description="Automate recurring billing schedules, track Monthly Recurring Revenue (MRR), manage subscriptions, and automatically generate draft invoices."
-        breadcrumbs={[{ label: 'Invoices', href: '/invoices' }, { label: 'Recurring Invoices' }]}
-        actions={
+  const dashboardBody = (
+    <div className="space-y-4 text-xs">
+      {embedded && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-border/60">
+          <div>
+            <h3 className="text-base font-bold text-foreground">Recurring Billing Schedules</h3>
+            <p className="text-xs text-muted-foreground">
+              Automate recurring subscription schedules and generate draft invoices on due dates.
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
@@ -101,8 +108,8 @@ export function RecurringDashboard() {
               <span>New Recurring Schedule</span>
             </Button>
           </div>
-        }
-      />
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
@@ -186,6 +193,44 @@ export function RecurringDashboard() {
         isOpen={!!selectedSchedule}
         onClose={() => setSelectedSchedule(null)}
       />
+    </div>
+  );
+
+  if (embedded) {
+    return dashboardBody;
+  }
+
+  return (
+    <ContentContainer>
+      <PageHeader
+        title="Recurring Invoices & Billing Automation"
+        description="Automate recurring billing schedules, track Monthly Recurring Revenue (MRR), manage subscriptions, and automatically generate draft invoices."
+        breadcrumbs={[{ label: 'Invoices', href: '/invoices' }, { label: 'Recurring Invoices' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRunJobs}
+              disabled={isProcessingJobs}
+              className="h-9 px-3 text-xs gap-1.5 border-primary/30 text-primary hover:bg-primary/5"
+            >
+              {isProcessingJobs ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Play className="h-3.5 w-3.5 fill-primary text-primary" />
+              )}
+              <span>Run Generation Job</span>
+            </Button>
+
+            <Button size="sm" onClick={() => setIsFormOpen(true)} className="h-9 px-3 text-xs gap-1.5 bg-primary">
+              <Plus className="h-3.5 w-3.5" />
+              <span>New Recurring Schedule</span>
+            </Button>
+          </div>
+        }
+      />
+      {dashboardBody}
     </ContentContainer>
   );
 }

@@ -40,10 +40,10 @@ export default function VendorsDirectoryPage() {
       <PageHeader
         title="Vendor Directory"
         description="Manage company suppliers, software subscriptions, equipment vendors, and service provider profiles."
-        breadcrumbs={[{ label: 'Expenses', href: '/expenses' }, { label: 'Vendor Directory' }]}
+        breadcrumbs={[{ label: 'Finance', href: '/finance?tab=expenses' }, { label: 'Vendor Directory' }]}
         actions={
           <div className="flex items-center space-x-2">
-            <Link href="/expenses">
+            <Link href="/finance?tab=expenses">
               <Button variant="outline" size="sm" className="h-9 px-3 text-xs gap-1.5 font-semibold">
                 <ArrowLeft className="h-3.5 w-3.5" />
                 <span>Back to Expenses</span>

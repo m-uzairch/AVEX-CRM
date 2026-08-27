@@ -25,13 +25,17 @@ describe('RBAC Matrix Logic Suite', () => {
   describe('canAccessRoute()', () => {
     it('authorizes allowed routes per role', () => {
       expect(canAccessRoute('COMPANY_OWNER', '/settings/users')).toBe(true);
+      expect(canAccessRoute('COMPANY_OWNER', '/finance')).toBe(true);
       expect(canAccessRoute('ADMIN', '/crm')).toBe(true);
+      expect(canAccessRoute('ADMIN', '/finance')).toBe(true);
       expect(canAccessRoute('EMPLOYEE', '/attendance')).toBe(true);
+      expect(canAccessRoute('EMPLOYEE', '/finance')).toBe(true);
     });
 
     it('blocks unauthorized route access', () => {
       expect(canAccessRoute('EMPLOYEE', '/settings/users')).toBe(false);
       expect(canAccessRoute('CLIENT', '/crm')).toBe(false);
+      expect(canAccessRoute('CLIENT', '/finance')).toBe(false);
     });
   });
 });

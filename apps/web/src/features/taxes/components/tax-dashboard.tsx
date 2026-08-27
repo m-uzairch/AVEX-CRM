@@ -24,8 +24,24 @@ import { TaxModal } from './tax-modal';
 import { Tabs, TabItem } from '@/components/ui/tabs';
 import { Receipt, Layers, Tag, Zap, BarChart3 } from 'lucide-react';
 
-export function TaxDashboard() {
-  const [activeTab, setActiveTab] = React.useState('rates');
+export interface TaxDashboardProps {
+  initialTab?: string;
+  allowedTabs?: ('rates' | 'templates' | 'discounts' | 'rules' | 'summary')[];
+  hideHeader?: boolean;
+}
+
+export function TaxDashboard({
+  initialTab = 'rates',
+  allowedTabs,
+  hideHeader = false,
+}: TaxDashboardProps = {}) {
+  const [activeTab, setActiveTab] = React.useState(initialTab);
+
+  React.useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
 
   // Data states
   const [taxes, setTaxes] = React.useState<TaxRate[]>([]);
@@ -244,7 +260,7 @@ export function TaxDashboard() {
     await fetchSummaries();
   };
 
-  const dashboardTabs: TabItem[] = [
+  const allTabs: TabItem[] = [
     { id: 'rates', label: 'Tax Rates', count: taxes.length, icon: <Receipt className="h-4 w-4" /> },
     { id: 'templates', label: 'Templates', count: templates.length, icon: <Layers className="h-4 w-4" /> },
     { id: 'discounts', label: 'Discounts', count: discounts.length, icon: <Tag className="h-4 w-4" /> },
@@ -252,19 +268,25 @@ export function TaxDashboard() {
     { id: 'summary', label: 'Reports & Analytics', icon: <BarChart3 className="h-4 w-4 text-blue-500" /> },
   ];
 
+  const dashboardTabs = allowedTabs
+    ? allTabs.filter((t) => (allowedTabs as string[]).includes(t.id))
+    : allTabs;
+
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 rounded-xl text-white shadow-md">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-            <Receipt className="h-7 w-7 text-blue-400" /> Tax & Discount Management
-          </h2>
-          <p className="text-sm text-slate-300 mt-1">
-            Configure global tax rates, country tax templates, inclusive/exclusive calculation methods, and discount rules across Invoices & Quotations.
-          </p>
+      {!hideHeader && (
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 p-6 rounded-xl text-white shadow-md">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Receipt className="h-7 w-7 text-blue-400" /> Tax & Discount Management
+            </h2>
+            <p className="text-sm text-slate-300 mt-1">
+              Configure global tax rates, country tax templates, inclusive/exclusive calculation methods, and discount rules across Invoices & Quotations.
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs Header */}
       <Tabs tabs={dashboardTabs} activeTab={activeTab} onTabChange={setActiveTab} />

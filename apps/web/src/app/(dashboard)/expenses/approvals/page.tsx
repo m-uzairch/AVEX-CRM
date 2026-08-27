@@ -40,9 +40,9 @@ export default function ExpenseApprovalQueuePage() {
       <PageHeader
         title="Expense Approval Queue"
         description="Review pending employee expense claims, inspect receipt file attachments, and approve or reject submissions."
-        breadcrumbs={[{ label: 'Expenses', href: '/expenses' }, { label: 'Approval Queue' }]}
+        breadcrumbs={[{ label: 'Finance', href: '/finance?tab=expenses' }, { label: 'Approval Queue' }]}
         actions={
-          <Link href="/expenses">
+          <Link href="/finance?tab=expenses">
             <Button variant="outline" size="sm" className="h-9 px-3 text-xs gap-1.5 font-semibold">
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>Back to Expenses</span>

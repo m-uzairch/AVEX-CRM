@@ -16,8 +16,6 @@ import {
   Clock,
   FileText,
   FileCheck,
-  DollarSign,
-  Receipt,
   LineChart,
   Package,
   BarChart3,
@@ -27,9 +25,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-  Percent,
-  Repeat,
   ExternalLink,
+  Landmark,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -47,10 +44,7 @@ const navItems: NavItem[] = [
   { title: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" /> },
   { title: 'Quotations', href: '/quotations', icon: <FileCheck className="h-4 w-4" /> },
   { title: 'Invoices', href: '/invoices', icon: <FileText className="h-4 w-4" /> },
-  { title: 'Recurring Invoices', href: '/invoices/recurring', icon: <Repeat className="h-4 w-4" /> },
-  { title: 'Payments', href: '/payments', icon: <DollarSign className="h-4 w-4" /> },
-  { title: 'Expenses', href: '/expenses', icon: <Receipt className="h-4 w-4" /> },
-  { title: 'Taxes & Discounts', href: '/taxes', icon: <Percent className="h-4 w-4" /> },
+  { title: 'Finance', href: '/finance', icon: <Landmark className="h-4 w-4" /> },
   { title: 'Financials', href: '/financial-dashboard', icon: <LineChart className="h-4 w-4" /> },
   { title: 'Inventory', href: '/inventory', icon: <Package className="h-4 w-4" /> },
   { title: 'Reports', href: '/reports', icon: <BarChart3 className="h-4 w-4" /> },

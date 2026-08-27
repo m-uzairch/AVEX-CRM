@@ -3,21 +3,54 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { PageHeader } from '@/components/layout/page-header';
 import { ContentContainer } from '@/components/layout/content-container';
+import { Tabs, TabItem } from '@/components/ui/tabs';
 import { InvoiceKPISummaryCards } from '@/features/invoices/components/invoice-kpi-summary';
 import { InvoiceFilterBar } from '@/features/invoices/components/invoice-filter-bar';
 import { RecordPaymentModal } from '@/features/invoices/components/record-payment-modal';
 import { EmailInvoiceModal } from '@/features/invoices/components/email-invoice-modal';
+import { RecurringDashboard } from '@/features/recurring-invoices/components/recurring-dashboard';
 import { Invoice, InvoiceFilterState, InvoiceKPISummary } from '@/features/invoices/types/invoice-types';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Plus, Eye, DollarSign, Mail, Trash2, Loader2, Edit, Palette } from 'lucide-react';
+import { FileText, Plus, Eye, DollarSign, Mail, Trash2, Loader2, Edit, Palette, Repeat } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 
 export default function InvoicesPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const toastCtx = useToast();
+
+  const tabParam = searchParams.get('tab') === 'recurring' ? 'recurring' : 'all';
+  const [activeTab, setActiveTab] = React.useState(tabParam);
+
+  React.useEffect(() => {
+    if (tabParam !== activeTab) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam, activeTab]);
+
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    const params = new URLSearchParams(searchParams.toString());
+    if (tabId === 'recurring') {
+      params.set('tab', 'recurring');
+    } else {
+      params.delete('tab');
+    }
+    const queryString = params.toString();
+    router.replace(queryString ? `${pathname}?${queryString}` : pathname);
+  };
+
+  const invoiceTabs: TabItem[] = [
+    { id: 'all', label: 'All Invoices', icon: <FileText className="h-4 w-4" /> },
+    { id: 'recurring', label: 'Recurring Invoices', icon: <Repeat className="h-4 w-4" /> },
+  ];
+
   const [invoices, setInvoices] = React.useState<Invoice[]>([]);
   const [summary, setSummary] = React.useState<InvoiceKPISummary>({
     totalInvoicesCount: 0,
@@ -104,31 +137,44 @@ export default function InvoicesPage() {
   return (
     <ContentContainer>
       <PageHeader
-        title="Invoices & Payments"
-        description="Create, manage, email, print, and track billing invoices and client payment receipts."
+        title="Invoices & Recurring Billing"
+        description="Create, manage, email, print, and track billing invoices, client payment receipts, and automated recurring subscription schedules."
         breadcrumbs={[{ label: 'Invoices' }]}
         actions={
-          <div className="flex items-center space-x-2">
-            <Link href="/invoices/templates">
-              <Button variant="outline" size="sm" className="h-9 px-3 text-xs gap-1.5 font-semibold">
-                <Palette className="h-3.5 w-3.5 text-primary" />
-                <span>Invoice Designer</span>
-              </Button>
-            </Link>
+          activeTab === 'all' ? (
+            <div className="flex items-center space-x-2">
+              <Link href="/invoices/templates">
+                <Button variant="outline" size="sm" className="h-9 px-3 text-xs gap-1.5 font-semibold">
+                  <Palette className="h-3.5 w-3.5 text-primary" />
+                  <span>Invoice Designer</span>
+                </Button>
+              </Link>
 
-            <Link href="/invoices/new">
-              <Button size="sm" className="h-9 px-3.5 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-                <Plus className="h-4 w-4" />
-                <span>Create Invoice</span>
-              </Button>
-            </Link>
-          </div>
+              <Link href="/invoices/new">
+                <Button size="sm" className="h-9 px-3.5 text-xs gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+                  <Plus className="h-4 w-4" />
+                  <span>Create Invoice</span>
+                </Button>
+              </Link>
+            </div>
+          ) : undefined
         }
       />
 
-      <div className="space-y-6 text-xs mt-4">
-        {/* KPI Summary Cards */}
-        <InvoiceKPISummaryCards summary={summary} />
+      {/* Tabs Header */}
+      <div className="mt-4">
+        <Tabs tabs={invoiceTabs} activeTab={activeTab} onTabChange={handleTabChange} />
+      </div>
+
+      {activeTab === 'recurring' ? (
+        <div className="mt-6">
+          <RecurringDashboard embedded={true} />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-6 text-xs mt-4">
+            {/* KPI Summary Cards */}
+            <InvoiceKPISummaryCards summary={summary} />
 
         {/* Filter Bar */}
         <InvoiceFilterBar
@@ -292,20 +338,22 @@ export default function InvoicesPage() {
         />
       )}
 
-      {/* Email Invoice Modal */}
-      {selectedInvoice && (
-        <EmailInvoiceModal
-          isOpen={isEmailModalOpen}
-          onClose={() => {
-            setIsEmailModalOpen(false);
-            setSelectedInvoice(null);
-          }}
-          invoiceId={selectedInvoice.id}
-          invoiceNumber={selectedInvoice.invoiceNumber}
-          customerEmail={selectedInvoice.customer?.email}
-          customerName={selectedInvoice.customer?.name}
-          onEmailSent={fetchInvoices}
-        />
+          {/* Email Invoice Modal */}
+          {selectedInvoice && (
+            <EmailInvoiceModal
+              isOpen={isEmailModalOpen}
+              onClose={() => {
+                setIsEmailModalOpen(false);
+                setSelectedInvoice(null);
+              }}
+              invoiceId={selectedInvoice.id}
+              invoiceNumber={selectedInvoice.invoiceNumber}
+              customerEmail={selectedInvoice.customer?.email}
+              customerName={selectedInvoice.customer?.name}
+              onEmailSent={fetchInvoices}
+            />
+          )}
+        </>
       )}
     </ContentContainer>
   );

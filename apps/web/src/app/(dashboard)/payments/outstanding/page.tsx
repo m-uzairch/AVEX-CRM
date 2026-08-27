@@ -46,12 +46,12 @@ export default function OutstandingInvoicesPage() {
       <PageHeader
         title="Outstanding Invoices & Aging Analysis"
         description="Monitor active open balances, overdue days aging, collection progress, and trigger payment reminders."
-        breadcrumbs={[{ label: 'Payments', href: '/payments' }, { label: 'Outstanding Invoices' }]}
+        breadcrumbs={[{ label: 'Finance', href: '/finance?tab=payments' }, { label: 'Outstanding Invoices' }]}
         actions={
-          <Link href="/payments">
+          <Link href="/finance?tab=payments">
             <Button variant="outline" size="sm" className="h-9 px-3 text-xs gap-1.5 font-semibold">
               <ArrowLeft className="h-3.5 w-3.5" />
-              <span>Back to Payment History</span>
+              <span>Back to Payments</span>
             </Button>
           </Link>
         }
