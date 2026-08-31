@@ -22,10 +22,10 @@ export function WidgetCard({
   contentClassName,
 }: WidgetCardProps) {
   return (
-    <Card className={cn('h-full flex flex-col', className)}>
+    <Card className={cn('group h-full flex flex-col transition-all duration-200 ease-out hover:shadow-subtle-hover', className)}>
       <CardHeader className="flex flex-row items-center justify-between pb-3">
         <div className="flex items-center space-x-2">
-          {icon && <span className="text-primary">{icon}</span>}
+          {icon && <span className="text-primary inline-flex card-hover-icon">{icon}</span>}
           <div>
             <CardTitle className="text-base font-semibold">{title}</CardTitle>
             {description && <CardDescription className="text-xs">{description}</CardDescription>}

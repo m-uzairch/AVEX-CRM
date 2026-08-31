@@ -23,11 +23,11 @@ export function DashboardCard({
   className,
 }: DashboardCardProps) {
   return (
-    <Card className={cn('overflow-hidden transition-all hover:border-border/80', className)}>
+    <Card className={cn('group overflow-hidden transition-all duration-200 ease-out hover:shadow-subtle-hover hover:border-border/80', className)}>
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-          {icon && <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-primary">{icon}</div>}
+          {icon && <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-primary card-hover-icon">{icon}</div>}
         </div>
         <div className="mt-2 flex items-baseline justify-between">
           <h3 className="text-2xl font-bold tracking-tight text-foreground">{value}</h3>

@@ -113,7 +113,7 @@ export function RecurringDashboard({ embedded = false }: RecurringDashboardProps
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4">
-        <Card className="bg-card border-border/50 shadow-sm">
+        <Card className="group bg-card border-border/60 shadow-subtle hover:shadow-subtle-hover hover:border-border/80 transition-all duration-200 ease-out">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-muted-foreground font-medium block">ACTIVE SUBSCRIPTIONS</span>
@@ -121,13 +121,13 @@ export function RecurringDashboard({ embedded = false }: RecurringDashboardProps
                 {summary?.totalActiveSubscriptions ?? 0}
               </span>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center card-hover-icon">
               <CheckCircle2 className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 shadow-sm">
+        <Card className="group bg-card border-border/60 shadow-subtle hover:shadow-subtle-hover hover:border-border/80 transition-all duration-200 ease-out">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-muted-foreground font-medium block">MONTHLY RECURRING REVENUE</span>
@@ -135,13 +135,13 @@ export function RecurringDashboard({ embedded = false }: RecurringDashboardProps
                 ${summary?.monthlyRecurringRevenue?.toLocaleString() ?? '0'} <span className="text-xs text-muted-foreground">/mo</span>
               </span>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-primary/10 text-primary flex items-center justify-center card-hover-icon">
               <TrendingUp className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 shadow-sm">
+        <Card className="group bg-card border-border/60 shadow-subtle hover:shadow-subtle-hover hover:border-border/80 transition-all duration-200 ease-out">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-muted-foreground font-medium block">UPCOMING (NEXT 7 DAYS)</span>
@@ -149,13 +149,13 @@ export function RecurringDashboard({ embedded = false }: RecurringDashboardProps
                 {summary?.upcomingInvoicesCount ?? 0}
               </span>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center card-hover-icon">
               <Calendar className="h-5 w-5" />
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 shadow-sm">
+        <Card className="group bg-card border-border/60 shadow-subtle hover:shadow-subtle-hover hover:border-border/80 transition-all duration-200 ease-out">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
               <span className="text-[11px] text-muted-foreground font-medium block">EXPIRING / CANCELLED</span>
@@ -163,7 +163,7 @@ export function RecurringDashboard({ embedded = false }: RecurringDashboardProps
                 {summary?.expiringPlansCount ?? 0}
               </span>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center card-hover-icon">
               <AlertTriangle className="h-5 w-5" />
             </div>
           </CardContent>

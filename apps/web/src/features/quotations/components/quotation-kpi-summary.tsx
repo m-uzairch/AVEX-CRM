@@ -13,10 +13,10 @@ export function QuotationKPISummaryCards({ summary }: QuotationKPISummaryCardsPr
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Quoted Value */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Total Quoted Pipeline</span>
-          <DollarSign className="h-4 w-4 text-blue-500" />
+          <DollarSign className="h-4 w-4 text-blue-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-foreground">
           ${summary.totalQuotedValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -27,10 +27,10 @@ export function QuotationKPISummaryCards({ summary }: QuotationKPISummaryCardsPr
       </div>
 
       {/* Accepted Value */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Accepted & Won Value</span>
-          <FileCheck className="h-4 w-4 text-emerald-500" />
+          <FileCheck className="h-4 w-4 text-emerald-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400">
           ${summary.acceptedValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -41,10 +41,10 @@ export function QuotationKPISummaryCards({ summary }: QuotationKPISummaryCardsPr
       </div>
 
       {/* Pending Approval Value */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Pending Client Approval</span>
-          <Clock className="h-4 w-4 text-purple-500" />
+          <Clock className="h-4 w-4 text-purple-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-purple-600 dark:text-purple-400">
           ${summary.pendingValue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -55,10 +55,10 @@ export function QuotationKPISummaryCards({ summary }: QuotationKPISummaryCardsPr
       </div>
 
       {/* Expired Quotes */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Expired Estimates</span>
-          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTriangle className="h-4 w-4 text-amber-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400">
           {summary.expiredCount} Quotes

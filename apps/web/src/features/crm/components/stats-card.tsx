@@ -27,11 +27,11 @@ export function StatsCard({
   className,
 }: StatsCardProps) {
   return (
-    <Card className={cn('shadow-xs border-border hover:border-border/80 transition-all', className)}>
+    <Card className={cn('group shadow-subtle border-border hover:border-border/80 hover:shadow-subtle-hover transition-all duration-200 ease-out', className)}>
       <CardContent className="p-4 sm:p-5">
         <div className="flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">{title}</span>
-          <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg shrink-0', iconBgColor)}>
+          <div className={cn('flex h-9 w-9 items-center justify-center rounded-lg shrink-0 card-hover-icon', iconBgColor)}>
             {icon}
           </div>
         </div>

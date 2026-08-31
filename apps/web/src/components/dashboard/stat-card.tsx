@@ -13,11 +13,11 @@ const categoryIconMap: Record<string, React.ReactNode> = {
 
 export function StatCard({ title, value, change, trend, description, category }: StatMetric) {
   return (
-    <Card className="overflow-hidden transition-all hover:border-border/80 shadow-xs">
+    <Card className="group overflow-hidden transition-all duration-200 ease-out hover:shadow-subtle-hover hover:border-border/80 shadow-subtle">
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-primary">
+          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center text-primary card-hover-icon">
             {categoryIconMap[category] || <CheckSquare className="h-4 w-4" />}
           </div>
         </div>

@@ -102,9 +102,9 @@ export function Sidebar({
       {/* Sidebar Container */}
       <aside
         className={cn(
-          'fixed top-0 bottom-0 left-0 z-40 flex flex-col border-r border-border bg-card transition-all duration-200 ease-in-out',
+          'fixed top-3 bottom-3 left-3 z-40 flex flex-col rounded-xl border border-border/80 bg-card/90 backdrop-blur-md dark:bg-card/85 shadow-subtle overflow-hidden transition-all duration-200 ease-in-out',
           isCollapsed ? 'w-16' : 'w-60',
-          isMobileOpen ? 'translate-x-0 w-60' : '-translate-x-full lg:translate-x-0',
+          isMobileOpen ? 'translate-x-0 w-60 z-50 shadow-lg' : '-translate-x-[calc(100%+1.5rem)] lg:translate-x-0',
         )}
       >
         {/* Sidebar Header with collision-free collapsed state */}

@@ -78,9 +78,9 @@ export function ProjectStatsCards({ stats, loading }: ProjectStatsCardsProps) {
       {items.map((item) => {
         const Icon = item.icon;
         return (
-          <Card key={item.title} className="hover:shadow-md transition-shadow">
+          <Card key={item.title} className="group shadow-subtle hover:shadow-subtle-hover hover:border-border/80 transition-all duration-200 ease-out">
             <CardContent className="p-4 flex items-center space-x-3">
-              <div className={`p-2.5 rounded-lg border shrink-0 ${item.color}`}>
+              <div className={`p-2.5 rounded-lg border shrink-0 card-hover-icon ${item.color}`}>
                 <Icon className="h-5 w-5" />
               </div>
               <div className="truncate">

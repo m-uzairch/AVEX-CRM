@@ -104,7 +104,7 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
     : 'AC';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-border bg-card/60 backdrop-blur-xs px-4 sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between rounded-xl border border-border/80 bg-card/90 backdrop-blur-md dark:bg-card/85 shadow-subtle px-4 sm:px-6">
       <div className="flex items-center space-x-3">
         <button
           onClick={onOpenMobileSidebar}
@@ -133,10 +133,10 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
             className="bg-transparent text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer"
             aria-label="Simulate user role"
           >
-            <option value="COMPANY_OWNER" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100 font-medium">Company Owner</option>
-            <option value="ADMIN" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100 font-medium">Admin</option>
-            <option value="EMPLOYEE" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100 font-medium">Employee</option>
-            <option value="CLIENT" className="bg-card text-card-foreground dark:bg-slate-900 dark:text-slate-100 font-medium">Client Portal</option>
+            <option value="COMPANY_OWNER" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Company Owner</option>
+            <option value="ADMIN" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Admin</option>
+            <option value="EMPLOYEE" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Employee</option>
+            <option value="CLIENT" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Client Portal</option>
           </select>
         </div>
 

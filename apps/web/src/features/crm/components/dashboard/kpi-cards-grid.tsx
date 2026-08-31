@@ -63,14 +63,14 @@ export function KPICardsGrid({ kpis, isLoading = false }: KPICardsGridProps) {
         const isDown = kpi.trend === 'down';
 
         return (
-          <Card key={kpi.id} className="border-border shadow-2xs hover:border-border/80 transition-all group">
+          <Card key={kpi.id} className="group border-border shadow-subtle hover:border-border/80 hover:shadow-subtle-hover transition-all duration-200 ease-out">
             <CardContent className="p-4 space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">
                   {kpi.title}
                 </span>
 
-                <div className={`p-2 rounded-xl border ${bgMap[kpi.iconName] || 'bg-primary/10 border-primary/20'}`}>
+                <div className={`p-2 rounded-xl border card-hover-icon ${bgMap[kpi.iconName] || 'bg-primary/10 border-primary/20'}`}>
                   {iconMap[kpi.iconName] || <Users className="h-5 w-5 text-primary" />}
                 </div>
               </div>

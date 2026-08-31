@@ -13,10 +13,10 @@ export function FinancialKPICards({ kpis }: FinancialKPICardsProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Revenue */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Total Revenue Collected</span>
-          <DollarSign className="h-4 w-4 text-emerald-500" />
+          <DollarSign className="h-4 w-4 text-emerald-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
           ${kpis.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -39,10 +39,10 @@ export function FinancialKPICards({ kpis }: FinancialKPICardsProps) {
       </div>
 
       {/* Net Profit */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Net Profit</span>
-          <TrendingUp className="h-4 w-4 text-blue-500" />
+          <TrendingUp className="h-4 w-4 text-blue-500 card-hover-icon" />
         </div>
         <div
           className={`text-xl font-extrabold font-mono ${
@@ -58,10 +58,10 @@ export function FinancialKPICards({ kpis }: FinancialKPICardsProps) {
       </div>
 
       {/* Total Expenses */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Total Company Expenses</span>
-          <Receipt className="h-4 w-4 text-purple-500" />
+          <Receipt className="h-4 w-4 text-purple-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-purple-600 dark:text-purple-400 font-mono">
           ${kpis.totalExpenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -72,10 +72,10 @@ export function FinancialKPICards({ kpis }: FinancialKPICardsProps) {
       </div>
 
       {/* Outstanding Receivables */}
-      <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-1">
+      <div className="group bg-card border border-border/80 rounded-xl p-4 shadow-subtle hover:shadow-subtle-hover hover:border-neutral-300/80 dark:hover:border-neutral-700/80 transition-all duration-200 ease-out space-y-1">
         <div className="flex items-center justify-between text-xs text-muted-foreground font-semibold">
           <span>Outstanding Receivables</span>
-          <AlertCircle className="h-4 w-4 text-amber-500" />
+          <AlertCircle className="h-4 w-4 text-amber-500 card-hover-icon" />
         </div>
         <div className="text-xl font-extrabold text-amber-600 dark:text-amber-400 font-mono">
           ${kpis.outstandingBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}

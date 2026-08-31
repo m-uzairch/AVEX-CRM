@@ -65,6 +65,10 @@ const config: Config = {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
+      boxShadow: {
+        subtle: 'var(--shadow-subtle)',
+        'subtle-hover': 'var(--shadow-subtle-hover)',
+      },
     },
   },
   plugins: [],
