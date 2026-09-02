@@ -72,10 +72,13 @@ export default function UserManagementPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
+      const assignedPassword = tempPassword || 'Password123!';
+
       await UserManagementService.inviteUser({
         fullName: inviteName,
         email: inviteEmail,
         role: inviteRole,
+        password: assignedPassword,
       });
 
       const loginUrl =
@@ -87,7 +90,7 @@ export default function UserManagementPage() {
         name: inviteName,
         email: inviteEmail,
         role: inviteRole,
-        password: tempPassword || 'Generated during first sign in',
+        password: assignedPassword,
         loginUrl,
       });
 

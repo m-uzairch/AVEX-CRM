@@ -9,12 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NotificationFilterTabs } from '@/features/notifications/components/notification-filter-tabs';
 import { NotificationListItem } from '@/features/notifications/components/notification-list-item';
-import { NotificationService } from '@/features/notifications/services/notification-service';
-import {
-  CRMNotification,
-  NotificationCategory,
-  NotificationKPIs,
-} from '@/features/notifications/types/notification-types';
+import { useNotificationStore } from '@/features/notifications/stores/notification-store';
 import { useToast } from '@/providers/toast-provider';
 import {
   Bell,
@@ -31,51 +26,35 @@ import {
 export default function NotificationCenterPage() {
   const { success, error: toastError } = useToast();
 
-  const [notifications, setNotifications] = React.useState<CRMNotification[]>([]);
-  const [kpis, setKpis] = React.useState<NotificationKPIs>({
-    totalCount: 0,
-    unreadCount: 0,
-    financeCount: 0,
-    crmCount: 0,
-    projectsCount: 0,
-    meetingsCount: 0,
-  });
+  const notifications = useNotificationStore((s) => s.notifications);
+  const kpis = useNotificationStore((s) => s.kpis);
+  const isLoading = useNotificationStore((s) => s.isLoading);
+  const isMarkingAll = useNotificationStore((s) => s.isMarkingAll);
+  const selectedCategory = useNotificationStore((s) => s.selectedCategory);
+  const unreadOnly = useNotificationStore((s) => s.unreadOnly);
+  const searchQuery = useNotificationStore((s) => s.searchQuery);
 
-  const [selectedCategory, setSelectedCategory] = React.useState<'ALL' | NotificationCategory>('ALL');
-  const [unreadOnly, setUnreadOnly] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState('');
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [isMarkingAll, setIsMarkingAll] = React.useState(false);
-
-  const loadNotifications = React.useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const data = await NotificationService.getNotifications({
-        search: searchQuery,
-        category: selectedCategory,
-        unreadOnly,
-      });
-      setNotifications(data.notifications);
-      setKpis(data.kpis);
-    } catch (err: any) {
-      toastError('Failed to load notifications', err.message || 'Error fetching notifications.');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [searchQuery, selectedCategory, unreadOnly, toastError]);
+  const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
+  const setSelectedCategory = useNotificationStore((s) => s.setSelectedCategory);
+  const setUnreadOnly = useNotificationStore((s) => s.setUnreadOnly);
+  const setSearchQuery = useNotificationStore((s) => s.setSearchQuery);
+  const markAsRead = useNotificationStore((s) => s.markAsRead);
+  const markAllAsRead = useNotificationStore((s) => s.markAllAsRead);
+  const dismissNotification = useNotificationStore((s) => s.dismissNotification);
 
   React.useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    fetchNotifications({
+      search: searchQuery,
+      category: selectedCategory,
+      unreadOnly,
+    }).catch((err: any) => {
+      toastError('Failed to load notifications', err.message || 'Error fetching notifications.');
+    });
+  }, [fetchNotifications, searchQuery, selectedCategory, unreadOnly, toastError]);
 
   const handleToggleRead = async (id: string, currentReadState: boolean) => {
     try {
-      const updated = await NotificationService.toggleRead(id, !currentReadState);
-      setNotifications((prev) => prev.map((n) => (n.id === id ? updated : n)));
-      setKpis((prev) => ({
-        ...prev,
-        unreadCount: currentReadState ? prev.unreadCount + 1 : Math.max(0, prev.unreadCount - 1),
-      }));
+      await markAsRead(id, !currentReadState);
     } catch (err: any) {
       toastError('Update failed', err.message || 'Could not update notification.');
     }
@@ -83,25 +62,19 @@ export default function NotificationCenterPage() {
 
   const handleDismiss = async (id: string) => {
     try {
-      await NotificationService.dismiss(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
+      await dismissNotification(id);
       success('Notification dismissed', 'The notification has been removed.');
-      loadNotifications();
     } catch (err: any) {
       toastError('Dismiss failed', err.message || 'Could not dismiss notification.');
     }
   };
 
   const handleMarkAllAsRead = async () => {
-    setIsMarkingAll(true);
     try {
-      const res = await NotificationService.markAllAsRead();
+      const res = await markAllAsRead();
       success('All marked as read', `Marked ${res.count} notifications as read.`);
-      loadNotifications();
     } catch (err: any) {
       toastError('Action failed', err.message || 'Could not mark all as read.');
-    } finally {
-      setIsMarkingAll(false);
     }
   };
 

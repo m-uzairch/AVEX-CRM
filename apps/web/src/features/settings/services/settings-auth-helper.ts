@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/database/prisma';
 import { UserRole } from '@/features/rbac/types/rbac-types';
 
+import { AuthUserStore } from '@/features/auth/services/auth-user-store';
+
 export interface SettingsAuthContext {
   userId: string;
   email: string;
@@ -59,6 +61,21 @@ export async function getSettingsAuthContext(request: NextRequest): Promise<Sett
         }
       } catch {
         // Fallback on DB disconnect
+      }
+
+      const memoryUser =
+        AuthUserStore.findUserById(authSessionCookie) ||
+        AuthUserStore.findUserByEmail(authSessionCookie);
+
+      if (memoryUser) {
+        return {
+          userId: memoryUser.id,
+          email: memoryUser.email,
+          fullName: memoryUser.fullName,
+          role: memoryUser.role,
+          companyId: memoryUser.companyId,
+          companyName: memoryUser.companyName,
+        };
       }
     }
 

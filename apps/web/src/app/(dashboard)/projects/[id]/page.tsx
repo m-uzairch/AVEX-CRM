@@ -28,13 +28,13 @@ import { updateProject } from '@/features/projects/services/project-service';
 import { ProjectDashboardData, ProjectTabId } from '@/features/projects/types/project-types';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 
-export default function ProjectDashboardPage() {
+function ProjectDashboardContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const projectId = params.id as string;
+  const projectId = (params?.id as string) || '';
 
-  const activeTabParam = (searchParams.get('tab') as ProjectTabId) || 'overview';
+  const activeTabParam = (searchParams?.get('tab') as ProjectTabId) || 'overview';
 
   const [dashboard, setDashboard] = React.useState<ProjectDashboardData | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -248,5 +248,13 @@ export default function ProjectDashboardPage() {
         projectId={projectId}
       />
     </ContentContainer>
+  );
+}
+
+export default function ProjectDashboardPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading project...</div>}>
+      <ProjectDashboardContent />
+    </React.Suspense>
   );
 }

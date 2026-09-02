@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Shield, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 
-export default function SettingsHubPage() {
+function SettingsHubContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -28,7 +28,7 @@ export default function SettingsHubPage() {
 
   const isOwnerOrAdmin = user?.role === 'COMPANY_OWNER' || user?.role === 'ADMIN';
 
-  const tabParam = (searchParams.get('tab') as SettingsTab) || 'profile';
+  const tabParam = (searchParams?.get('tab') as SettingsTab) || 'profile';
   const [activeTab, setActiveTab] = React.useState<SettingsTab>(tabParam);
 
   React.useEffect(() => {
@@ -39,7 +39,7 @@ export default function SettingsHubPage() {
 
   const handleTabChange = (tab: SettingsTab) => {
     setActiveTab(tab);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('tab', tab);
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -173,5 +173,13 @@ export default function SettingsHubPage() {
         </div>
       </div>
     </ContentContainer>
+  );
+}
+
+export default function SettingsHubPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading settings...</div>}>
+      <SettingsHubContent />
+    </React.Suspense>
   );
 }

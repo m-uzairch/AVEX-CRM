@@ -61,37 +61,28 @@ export class AuthService {
       }
     }
 
-    const userId = authDataUser?.id || `usr_${Math.random().toString(36).substring(2, 10)}`;
-    const isConfirmed = Boolean(authDataUser?.session || authDataUser?.email_confirmed_at || true);
-    const companyId = `comp_${userId.substring(0, 8)}`;
+    // Call server-side /api/auth/register to securely hash and persist credentials
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...values,
+        supabaseUserId: authDataUser?.id,
+      }),
+    });
 
-    const company: CompanyOnboarding = {
-      id: companyId,
-      name: values.companyName,
-      businessType: values.businessType,
-      createdAt: new Date().toISOString(),
-    };
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Failed to create workspace account.');
+    }
 
-    const user: AuthUserProfile = {
-      id: userId,
-      supabaseUserId: userId,
-      email: values.email,
-      fullName: values.fullName,
-      companyId: company.id,
-      companyName: company.name,
-      businessType: company.businessType,
-      role: 'COMPANY_OWNER',
-      isEmailVerified: isConfirmed,
-      createdAt: new Date().toISOString(),
-    };
-
-    this.setSessionCookie(userId);
-
-    return { user, company, isConfirmed };
+    const data = await res.json();
+    this.setSessionCookie(data.user.id);
+    return data;
   }
 
   static async loginUser(values: LoginFormValues): Promise<AuthUserProfile> {
-    let authDataUser: any = null;
+    let supabaseUser: any = null;
 
     if (this.isSupabaseLive()) {
       try {
@@ -105,8 +96,8 @@ export class AuthService {
           if (!authError.message.includes('fetch')) {
             throw new Error(authError.message);
           }
-        } else {
-          authDataUser = authData.user;
+        } else if (authData.user) {
+          supabaseUser = authData.user;
         }
       } catch (err: any) {
         if (!err.message?.includes('fetch')) {
@@ -116,27 +107,26 @@ export class AuthService {
       }
     }
 
-    const email = values.email.trim().toLowerCase();
-    const userId = authDataUser?.id || `usr_${btoa(email).replace(/[^a-zA-Z0-9]/g, '').substring(0, 10)}`;
-    const fullName = authDataUser?.user_metadata?.full_name || email.split('@')[0].replace('.', ' ');
-    const companyName = authDataUser?.user_metadata?.company_name || 'My Workspace';
-    const businessType = authDataUser?.user_metadata?.business_type || 'DIGITAL';
-    const companyId = `comp_${userId.substring(0, 8)}`;
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...values,
+        supabaseUserId: supabaseUser?.id,
+        supabaseUser,
+      }),
+    });
 
-    this.setSessionCookie(userId);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || 'Invalid email or password.');
+    }
 
-    return {
-      id: userId,
-      supabaseUserId: userId,
-      email,
-      fullName: fullName.charAt(0).toUpperCase() + fullName.slice(1),
-      companyId,
-      companyName,
-      businessType,
-      role: 'COMPANY_OWNER',
-      isEmailVerified: Boolean(authDataUser?.email_confirmed_at || true),
-      createdAt: authDataUser?.created_at || new Date().toISOString(),
-    };
+    const data = await res.json();
+    const user: AuthUserProfile = data.user;
+
+    this.setSessionCookie(user.id);
+    return user;
   }
 
   static async resendVerificationEmail(email: string): Promise<void> {

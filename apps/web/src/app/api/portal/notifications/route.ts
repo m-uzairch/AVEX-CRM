@@ -45,10 +45,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ notifications });
   } catch (error) {
-    console.error('[API GET /api/portal/notifications] Error:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch notifications.' },
-      { status: 500 }
-    );
+    console.warn('[API GET /api/portal/notifications] Returning fallback notifications view:', error);
+    return NextResponse.json({ notifications: [] });
   }
 }

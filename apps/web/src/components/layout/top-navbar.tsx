@@ -13,6 +13,8 @@ import { Menu, User, Settings, LogOut, Shield } from 'lucide-react';
 import { NotificationCenterDropdown } from '@/components/notifications/notification-center-dropdown';
 import { GlobalSearchPopover } from '@/components/search/global-search-popover';
 
+import { SwitchRoleModal } from './switch-role-modal';
+
 export interface TopNavbarProps {
   onOpenMobileSidebar: () => void;
 }
@@ -48,18 +50,18 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
   const title = pageTitles[pathname] || 'Dashboard';
 
   const user = useAuthStore((state) => state.user);
-  const updateUser = useAuthStore((state) => state.updateUser);
   const logout = useAuthStore((state) => state.logout);
 
   const activeRole: UserRole = (user?.role as UserRole) || 'COMPANY_OWNER';
+  const isOwner = activeRole === 'COMPANY_OWNER';
 
-  const handleRoleSwitch = (newRole: UserRole) => {
-    updateUser({ role: newRole });
-    if (newRole === 'CLIENT') {
-      router.push('/portal');
-    } else if (pathname.startsWith('/portal')) {
-      router.push('/dashboard');
-    }
+  const [isSwitchModalOpen, setIsSwitchModalOpen] = React.useState(false);
+  const [targetRoleForModal, setTargetRoleForModal] = React.useState<UserRole>('ADMIN');
+
+  const handleOpenSwitchModal = (role: UserRole) => {
+    if (!isOwner) return;
+    setTargetRoleForModal(role);
+    setIsSwitchModalOpen(true);
   };
 
   const handleLogout = async () => {
@@ -74,11 +76,24 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
       icon: <User className="h-4 w-4" />,
       onClick: () => router.push('/settings'),
     },
-    {
-      label: 'User Management',
-      icon: <Settings className="h-4 w-4" />,
-      onClick: () => router.push('/settings/users'),
-    },
+    ...(isOwner
+      ? [
+          {
+            label: 'Switch Role / Account',
+            icon: <Shield className="h-4 w-4 text-primary" />,
+            onClick: () => handleOpenSwitchModal('ADMIN'),
+          },
+        ]
+      : []),
+    ...(isOwner || activeRole === 'ADMIN'
+      ? [
+          {
+            label: 'User Management',
+            icon: <Settings className="h-4 w-4" />,
+            onClick: () => router.push('/settings/users'),
+          },
+        ]
+      : []),
     {
       label: 'Sign Out',
       icon: <LogOut className="h-4 w-4" />,
@@ -104,63 +119,71 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
     : 'AC';
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between rounded-xl border border-border/80 bg-card/90 backdrop-blur-md dark:bg-card/85 shadow-subtle px-4 sm:px-6">
-      <div className="flex items-center space-x-3">
-        <button
-          onClick={onOpenMobileSidebar}
-          className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent"
-          type="button"
-          aria-label="Open navigation menu"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-        <h1 className="text-lg font-bold tracking-tight text-foreground hidden sm:block">{title}</h1>
-      </div>
-
-      {/* Global Search Input */}
-      <div className="flex-1 max-w-md mx-4 hidden md:block">
-        <GlobalSearchPopover />
-      </div>
-
-      {/* Right Controls */}
-      <div className="flex items-center space-x-3">
-        {/* Role Simulator Switcher for Testing */}
-        <div className="hidden sm:flex items-center space-x-1.5 border border-border rounded-lg bg-card p-1">
-          <Shield className="h-3.5 w-3.5 text-muted-foreground ml-1" />
-          <select
-            value={activeRole}
-            onChange={(e) => handleRoleSwitch(e.target.value as UserRole)}
-            className="bg-transparent text-xs font-semibold text-foreground focus:outline-hidden cursor-pointer"
-            aria-label="Simulate user role"
+    <>
+      <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between rounded-xl border border-border/80 bg-card/90 backdrop-blur-md dark:bg-card/85 shadow-subtle px-4 sm:px-6">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={onOpenMobileSidebar}
+            className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md border border-border text-muted-foreground hover:bg-accent"
+            type="button"
+            aria-label="Open navigation menu"
           >
-            <option value="COMPANY_OWNER" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Company Owner</option>
-            <option value="ADMIN" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Admin</option>
-            <option value="EMPLOYEE" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Employee</option>
-            <option value="CLIENT" className="bg-card text-card-foreground dark:bg-neutral-900 dark:text-neutral-100 font-medium">Client Portal</option>
-          </select>
+            <Menu className="h-5 w-5" />
+          </button>
+          <h1 className="text-lg font-bold tracking-tight text-foreground hidden sm:block">{title}</h1>
         </div>
 
-        {/* Role Badge */}
-        <Badge variant={roleVariantMap[activeRole]} className="hidden lg:inline-flex text-[10px]">
-          {activeRole.replace('_', ' ')}
-        </Badge>
+        {/* Global Search Input */}
+        <div className="flex-1 max-w-md mx-4 hidden md:block">
+          <GlobalSearchPopover />
+        </div>
 
-        {/* Notifications Dropdown */}
-        <NotificationCenterDropdown />
-
-        {/* Theme Toggle */}
-        <ThemeToggle />
-
-        {/* User Profile Dropdown */}
-        <DropdownMenu
-          trigger={
-            <div className="flex items-center space-x-2 p-1 rounded-full hover:bg-accent transition-colors">
-              <Avatar fallback={initials} size="sm" />
+        {/* Right Controls */}
+        <div className="flex items-center space-x-3">
+          {/* Authenticated Role Switcher — ONLY visible to Company Owner with re-auth */}
+          {isOwner && (
+            <div className="hidden sm:flex items-center space-x-1.5 border border-primary/30 rounded-lg bg-primary/5 px-2 py-1">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              <button
+                type="button"
+                onClick={() => handleOpenSwitchModal('ADMIN')}
+                className="text-xs font-semibold text-primary hover:underline cursor-pointer flex items-center space-x-1"
+                aria-label="Switch perspective"
+              >
+                <span>Switch Role</span>
+              </button>
             </div>
-          }
-          items={userMenuItems}
-        />
-      </div>
-    </header>
+          )}
+
+          {/* Role Badge */}
+          <Badge variant={roleVariantMap[activeRole]} className="text-[10px]">
+            {activeRole.replace('_', ' ')}
+          </Badge>
+
+          {/* Notifications Dropdown */}
+          <NotificationCenterDropdown />
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
+
+          {/* User Profile Dropdown */}
+          <DropdownMenu
+            trigger={
+              <div className="flex items-center space-x-2 p-1 rounded-full hover:bg-accent transition-colors">
+                <Avatar fallback={initials} size="sm" />
+              </div>
+            }
+            items={userMenuItems}
+          />
+        </div>
+      </header>
+
+      {/* Re-Authentication Modal for Role Switching */}
+      <SwitchRoleModal
+        isOpen={isSwitchModalOpen}
+        onClose={() => setIsSwitchModalOpen(false)}
+        initialTargetRole={targetRoleForModal}
+      />
+    </>
   );
 }

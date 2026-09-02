@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { NotificationService } from '@/features/notifications/services/notification-service';
+import { useNotificationStore } from '@/features/notifications/stores/notification-store';
 import { CRMNotification } from '@/features/notifications/types/notification-types';
 import { Bell, Check, Sparkles, X, ExternalLink, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -11,49 +11,40 @@ import { cn } from '@/lib/utils';
 
 export function NotificationCenterDropdown() {
   const router = useRouter();
-  const [notifications, setNotifications] = React.useState<CRMNotification[]>([]);
-  const [unreadCount, setUnreadCount] = React.useState(0);
+  const notifications = useNotificationStore((state) => state.notifications);
+  const unreadCount = useNotificationStore((state) => state.kpis.unreadCount);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+  const markAllAsRead = useNotificationStore((state) => state.markAllAsRead);
+  const markAsRead = useNotificationStore((state) => state.markAsRead);
+  const dismissNotification = useNotificationStore((state) => state.dismissNotification);
+
   const [isOpen, setIsOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
-  const loadNotifications = React.useCallback(async () => {
-    try {
-      const data = await NotificationService.getNotifications();
-      setNotifications(data.notifications.slice(0, 6)); // Top 6 for dropdown
-      setUnreadCount(data.kpis.unreadCount);
-    } catch {
-      // Fallback
-    }
-  }, []);
-
   React.useEffect(() => {
-    loadNotifications();
-  }, [loadNotifications]);
+    fetchNotifications().catch(() => {});
+  }, [fetchNotifications]);
 
   const handleMarkAllRead = async () => {
     try {
-      await NotificationService.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, readAt: new Date().toISOString() })));
-      setUnreadCount(0);
+      await markAllAsRead();
     } catch {
-      // Fallback
+      // Handled in store
     }
   };
 
   const handleDismiss = async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     try {
-      await NotificationService.dismiss(id);
-      setNotifications((prev) => prev.filter((n) => n.id !== id));
-      setUnreadCount((prev) => Math.max(0, prev - 1));
+      await dismissNotification(id);
     } catch {
-      // Fallback
+      // Handled in store
     }
   };
 
   const handleItemClick = (n: CRMNotification) => {
     if (!n.readAt) {
-      NotificationService.toggleRead(n.id, true).catch(() => {});
+      markAsRead(n.id, true).catch(() => {});
     }
     setIsOpen(false);
     if (n.link) {
@@ -69,12 +60,12 @@ export function NotificationCenterDropdown() {
     };
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside);
-      loadNotifications();
+      fetchNotifications().catch(() => {});
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [isOpen, loadNotifications]);
+  }, [isOpen, fetchNotifications]);
 
   return (
     <div className="relative inline-block text-left" ref={menuRef}>

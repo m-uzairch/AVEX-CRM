@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
+import { useNotificationStore } from '@/features/notifications/stores/notification-store';
 import { canAccessRoute } from '@/features/rbac/config/rbac-matrix';
 import { UserRole } from '@/features/rbac/types/rbac-types';
 import { APP_NAME, APP_VERSION } from '@avex/constants';
@@ -36,23 +37,6 @@ export interface NavItem {
   badge?: string;
 }
 
-const navItems: NavItem[] = [
-  { title: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
-  { title: 'CRM', href: '/crm', icon: <Users className="h-4 w-4" /> },
-  { title: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" /> },
-  { title: 'Employees', href: '/employees', icon: <UserCheck className="h-4 w-4 text-xs" /> },
-  { title: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" /> },
-  { title: 'Quotations', href: '/quotations', icon: <FileCheck className="h-4 w-4" /> },
-  { title: 'Invoices', href: '/invoices', icon: <FileText className="h-4 w-4" /> },
-  { title: 'Finance', href: '/finance', icon: <Landmark className="h-4 w-4" /> },
-  { title: 'Financials', href: '/financial-dashboard', icon: <LineChart className="h-4 w-4" /> },
-  { title: 'Inventory', href: '/inventory', icon: <Package className="h-4 w-4" /> },
-  { title: 'Reports', href: '/reports', icon: <BarChart3 className="h-4 w-4" /> },
-  { title: 'Calendar', href: '/calendar', icon: <Calendar className="h-4 w-4" /> },
-  { title: 'Notifications', href: '/notifications', icon: <Bell className="h-4 w-4" />, badge: '3' },
-  { title: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4" /> },
-];
-
 export interface SidebarProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -69,6 +53,38 @@ export function Sidebar({
   const pathname = usePathname();
   const user = useAuthStore((state) => state.user);
   const role = (user?.role as UserRole) || 'COMPANY_OWNER';
+
+  const unreadCount = useNotificationStore((state) => state.kpis.unreadCount);
+  const fetchNotifications = useNotificationStore((state) => state.fetchNotifications);
+
+  React.useEffect(() => {
+    fetchNotifications().catch(() => {});
+  }, [fetchNotifications]);
+
+  const navItems: NavItem[] = React.useMemo(
+    () => [
+      { title: 'Dashboard', href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
+      { title: 'CRM', href: '/crm', icon: <Users className="h-4 w-4" /> },
+      { title: 'Projects', href: '/projects', icon: <FolderKanban className="h-4 w-4" /> },
+      { title: 'Employees', href: '/employees', icon: <UserCheck className="h-4 w-4 text-xs" /> },
+      { title: 'Attendance', href: '/attendance', icon: <Clock className="h-4 w-4" /> },
+      { title: 'Quotations', href: '/quotations', icon: <FileCheck className="h-4 w-4" /> },
+      { title: 'Invoices', href: '/invoices', icon: <FileText className="h-4 w-4" /> },
+      { title: 'Finance', href: '/finance', icon: <Landmark className="h-4 w-4" /> },
+      { title: 'Financials', href: '/financial-dashboard', icon: <LineChart className="h-4 w-4" /> },
+      { title: 'Inventory', href: '/inventory', icon: <Package className="h-4 w-4" /> },
+      { title: 'Reports', href: '/reports', icon: <BarChart3 className="h-4 w-4" /> },
+      { title: 'Calendar', href: '/calendar', icon: <Calendar className="h-4 w-4" /> },
+      {
+        title: 'Notifications',
+        href: '/notifications',
+        icon: <Bell className="h-4 w-4" />,
+        badge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : String(unreadCount)) : undefined,
+      },
+      { title: 'Settings', href: '/settings', icon: <Settings className="h-4 w-4" /> },
+    ],
+    [unreadCount]
+  );
 
   // Filter navigation items based on current user role permissions
   const filteredNavItems = navItems.filter((item) => canAccessRoute(role, item.href));

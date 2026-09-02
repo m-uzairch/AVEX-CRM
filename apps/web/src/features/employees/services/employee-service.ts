@@ -13,6 +13,7 @@ import {
 } from '../schemas/employee-schemas';
 import { memoryAttendanceRecords } from '@/features/attendance/services/attendance-store';
 import { memoryEmployeeRecords } from './employee-store';
+import { AuthUserStore } from '@/features/auth/services/auth-user-store';
 
 export class EmployeeService {
   /**
@@ -347,7 +348,7 @@ export class EmployeeService {
         },
       });
 
-      return {
+      const result: EmployeeRecord = {
         id: created.id,
         companyId: created.companyId,
         userId: created.userId,
@@ -366,6 +367,23 @@ export class EmployeeService {
         updatedAt: created.updatedAt.toISOString(),
         user: created.user,
       };
+
+      // Also register credentials in AuthUserStore for authentication
+      AuthUserStore.registerOrUpdateUser({
+        id: created.userId || created.id,
+        email: data.email.toLowerCase().trim(),
+        password: 'Password123!',
+        fullName: data.fullName,
+        role: 'EMPLOYEE',
+        companyId,
+        companyName: 'AVEX CRM Technologies Inc.',
+        businessType: 'DIGITAL',
+        status: 'ACTIVE',
+        isEmailVerified: true,
+        createdAt: created.createdAt.toISOString(),
+      });
+
+      return result;
     } catch (dbError: any) {
       console.warn(
         '[EmployeeService.createEmployee] DB insert failed, storing in development store:',
@@ -395,6 +413,22 @@ export class EmployeeService {
       };
 
       memoryEmployeeRecords[companyId].unshift(newRecord);
+
+      // Register credentials in AuthUserStore for authentication
+      AuthUserStore.registerOrUpdateUser({
+        id: newRecord.userId || newRecord.id,
+        email: data.email.toLowerCase().trim(),
+        password: 'Password123!',
+        fullName: data.fullName,
+        role: 'EMPLOYEE',
+        companyId,
+        companyName: 'AVEX CRM Technologies Inc.',
+        businessType: 'DIGITAL',
+        status: 'ACTIVE',
+        isEmailVerified: true,
+        createdAt: newRecord.createdAt,
+      });
+
       return newRecord;
     }
   }

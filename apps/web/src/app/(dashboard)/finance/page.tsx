@@ -20,12 +20,12 @@ const financeTabs: TabItem[] = [
   { id: 'discounts', label: 'Discounts & Rules', icon: <Tag className="h-4 w-4" /> },
 ];
 
-export default function FinanceHubPage() {
+function FinanceHubContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
 
-  const tabParam = searchParams.get('tab') as FinanceTab;
+  const tabParam = searchParams?.get('tab') as FinanceTab;
   const validTabs: FinanceTab[] = ['payments', 'expenses', 'taxes', 'discounts'];
   const resolvedTab = validTabs.includes(tabParam) ? tabParam : 'payments';
 
@@ -40,7 +40,7 @@ export default function FinanceHubPage() {
   const handleTabChange = (tabId: string) => {
     const nextTab = tabId as FinanceTab;
     setActiveTab(nextTab);
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() || '');
     params.set('tab', nextTab);
     router.replace(`${pathname}?${params.toString()}`);
   };
@@ -81,5 +81,13 @@ export default function FinanceHubPage() {
         )}
       </div>
     </ContentContainer>
+  );
+}
+
+export default function FinanceHubPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading finance...</div>}>
+      <FinanceHubContent />
+    </React.Suspense>
   );
 }

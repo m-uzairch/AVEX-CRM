@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Plus, Eye, DollarSign, Mail, Trash2, Loader2, Edit, Palette, Repeat } from 'lucide-react';
 import { useToast } from '@/providers/toast-provider';
 
-export default function InvoicesPage() {
+function InvoicesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -356,5 +356,13 @@ export default function InvoicesPage() {
         </>
       )}
     </ContentContainer>
+  );
+}
+
+export default function InvoicesPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading invoices...</div>}>
+      <InvoicesContent />
+    </React.Suspense>
   );
 }

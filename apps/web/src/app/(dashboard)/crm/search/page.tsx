@@ -11,9 +11,9 @@ import { GroupedSearchResults, AdvancedFilterState } from '@/features/search/typ
 import { globalSearch } from '@/features/search/services/search-service';
 import { AdvancedFilterPanel } from '@/features/search/components/advanced-filter-panel';
 
-export default function SearchResultsPage() {
+function SearchResultsContent() {
   const searchParams = useSearchParams();
-  const initialQuery = searchParams.get('q') || '';
+  const initialQuery = searchParams?.get('q') || '';
 
   const [query, setQuery] = React.useState(initialQuery);
   const [activeModule, setActiveModule] = React.useState<'all' | 'customers' | 'leads'>('all');
@@ -232,5 +232,13 @@ export default function SearchResultsPage() {
         }}
       />
     </CRMLayout>
+  );
+}
+
+export default function SearchResultsPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading search...</div>}>
+      <SearchResultsContent />
+    </React.Suspense>
   );
 }

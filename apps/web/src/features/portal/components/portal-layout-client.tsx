@@ -33,26 +33,41 @@ interface PortalLayoutClientProps {
 export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const isLoginPage = pathname === '/portal/login';
   const [client, setClient] = React.useState<ClientAccount | null>(null);
+  const [loading, setLoading] = React.useState(!isLoginPage);
   const [isMobileNavOpen, setIsMobileNavOpen] = React.useState(false);
   const [notifications, setNotifications] = React.useState<ClientNotification[]>([]);
   const [showNotifs, setShowNotifs] = React.useState(false);
 
-  const isLoginPage = pathname === '/portal/login';
-
   React.useEffect(() => {
+    let isMounted = true;
     if (!isLoginPage) {
       fetchClientMe()
-        .then(setClient)
+        .then((data) => {
+          if (isMounted) {
+            setClient(data);
+            setLoading(false);
+          }
+        })
         .catch(() => {
-          // If unauthenticated, redirect to login
-          router.push('/portal/login');
+          if (isMounted) {
+            // If unauthenticated, clear client_session cookie and redirect to login
+            document.cookie = 'client_session=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            router.replace('/portal/login');
+          }
         });
 
       fetchClientNotifications()
-        .then(setNotifications)
+        .then((notifs) => {
+          if (isMounted) setNotifications(notifs);
+        })
         .catch(() => {});
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [isLoginPage, router]);
 
   // Close mobile nav on route change
@@ -63,6 +78,38 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
 
   if (isLoginPage) {
     return <>{children}</>;
+  }
+
+  if (loading || !client) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 space-y-4">
+        <div className="flex items-center space-x-2 text-xs text-muted-foreground">
+          <div className="h-4 w-4 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          <span>Verifying secure client session...</span>
+        </div>
+        <div className="flex items-center space-x-3 text-xs pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              document.cookie = 'client_session=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+              router.replace('/portal/login');
+            }}
+          >
+            Client Sign In
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              router.replace('/login');
+            }}
+          >
+            Staff CRM Login
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   const navLinks = [

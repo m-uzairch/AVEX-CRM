@@ -39,7 +39,13 @@ export default function ClientDashboardPage() {
       const res = await fetchClientDashboard();
       setData(res);
     } catch (err: any) {
-      console.error(err);
+      if (err?.message?.includes('Unauthorized') || err?.message?.includes('sign in')) {
+        if (typeof window !== 'undefined') {
+          window.location.href = '/portal/login?redirectTo=' + encodeURIComponent(window.location.pathname);
+          return;
+        }
+      }
+      console.warn('Dashboard notice:', err);
       setError(err?.message || 'Unable to load dashboard data. Please try again.');
     } finally {
       setLoading(false);

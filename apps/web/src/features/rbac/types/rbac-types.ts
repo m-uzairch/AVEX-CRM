@@ -28,4 +28,5 @@ export interface UserInvitationInput {
   fullName: string;
   email: string;
   role: UserRole;
+  password?: string;
 }

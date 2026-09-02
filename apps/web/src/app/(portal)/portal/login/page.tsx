@@ -37,7 +37,7 @@ function LoginFormContent() {
       setLoading(true);
       setError(null);
       await clientLogin(values);
-      router.push(redirectTo);
+      window.location.href = redirectTo;
     } catch (err: any) {
       setError(err?.message || 'Authentication failed.');
     } finally {

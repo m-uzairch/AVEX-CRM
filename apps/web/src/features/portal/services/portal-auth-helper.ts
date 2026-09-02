@@ -31,83 +31,68 @@ export const DEFAULT_PORTAL_CLIENT: PortalAuthContext = {
   companyName: 'Nexus Corp',
 };
 
+import { AuthUserStore } from '@/features/auth/services/auth-user-store';
+
 /**
  * Validates client session and returns the authorized tenant context.
  * Guarantees that any query executed with this context is isolated to the client's companyId and customerId.
+ * Returns null if no valid authenticated client session exists.
  */
-export async function getPortalAuthContext(request: NextRequest): Promise<PortalAuthContext> {
+export async function getPortalAuthContext(request: NextRequest): Promise<PortalAuthContext | null> {
   try {
     const clientIdCookie = request.cookies.get('client_session')?.value;
+    if (!clientIdCookie) {
+      return null;
+    }
+
     const db = prisma as any;
+    let client: any = null;
 
-    let client = null;
-
-    if (clientIdCookie) {
-      try {
+    try {
+      if (db.clientAccount?.findUnique) {
         client = await db.clientAccount.findUnique({
           where: { id: clientIdCookie },
           include: { customer: true, company: true },
         });
-      } catch {
-        // DB lookup fallback
       }
-    }
-
-    // Fallback: If in local dev / initial setup, query the first client account or customer
-    if (!client) {
-      try {
+      if (!client && db.clientAccount?.findFirst) {
         client = await db.clientAccount.findFirst({
+          where: { email: clientIdCookie },
           include: { customer: true, company: true },
         });
-      } catch {
-        // DB lookup fallback
       }
+    } catch {
+      // DB lookup fallback
     }
 
     if (!client) {
-      try {
-        const customer = await db.customer.findFirst({
-          include: { company: true },
-        });
-
-        if (customer) {
-          client = await db.clientAccount.create({
-            data: {
-              companyId: customer.companyId,
-              customerId: customer.id,
-              email: customer.email || 'client@nexuscorp.com',
-              passwordHash: 'hashed_client_pwd',
-              name: customer.name,
-              phone: customer.phone,
-            },
-            include: { customer: true, company: true },
-          });
-        }
-      } catch {
-        // DB create fallback
-      }
+      client = AuthUserStore.findClientById(clientIdCookie) || AuthUserStore.findClientByEmail(clientIdCookie);
     }
 
-    if (client && client.customerId && client.companyId && client.isActive !== false) {
+    if (client && client.isActive !== false) {
+      const targetCompanyId = client.companyId || 'comp_001';
+      const targetCustomerId = client.customerId || client.id || 'cust_001';
       return {
         client,
-        companyId: client.companyId,
-        customerId: client.customerId,
-        clientEmail: client.email,
-        clientName: client.name,
-        companyName: client.customer?.companyName || client.company?.name || 'Company',
+        companyId: targetCompanyId,
+        customerId: targetCustomerId,
+        clientEmail: client.email || 'client@nexuscorp.com',
+        clientName: client.name || client.customer?.name || 'Client User',
+        companyName: client.customer?.companyName || client.company?.name || 'Company Workspace',
       };
     }
 
-    return DEFAULT_PORTAL_CLIENT;
+    return null;
   } catch (error) {
-    console.warn('[getPortalAuthContext] Operating in resilient fallback client mode:', error);
-    return DEFAULT_PORTAL_CLIENT;
+    console.error('[getPortalAuthContext] Error retrieving client session context:', error);
+    return null;
   }
 }
 
 export function portalUnauthorizedResponse(message = 'Unauthorized client session. Please sign in.') {
-  return NextResponse.json({ error: message }, { status: 401 });
+  const response = NextResponse.json({ error: message }, { status: 401 });
+  response.cookies.delete('client_session');
+  return response;
 }
 
 export function portalForbiddenResponse(message = 'Access denied. You do not have permission to view this resource.') {

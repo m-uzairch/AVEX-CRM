@@ -154,10 +154,10 @@ const MOCK_STATS: ProjectStats = {
   totalTasks: 24,
 };
 
-export default function ProjectsPage() {
+function ProjectsContent() {
   const searchParams = useSearchParams();
 
-  const tabParam = searchParams.get('tab') || 'dashboard';
+  const tabParam = searchParams?.get('tab') || 'dashboard';
 
   const {
     viewMode,
@@ -360,5 +360,13 @@ export default function ProjectsPage() {
         categories={categories}
       />
     </ProjectLayout>
+  );
+}
+
+export default function ProjectsPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-muted-foreground">Loading projects...</div>}>
+      <ProjectsContent />
+    </React.Suspense>
   );
 }

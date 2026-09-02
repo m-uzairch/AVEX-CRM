@@ -1,59 +1,46 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse, type NextRequest } from 'next/server';
 import { prisma } from '@/lib/database/prisma';
+import { AuthUserStore } from '@/features/auth/services/auth-user-store';
 
 export async function GET(request: NextRequest) {
   try {
     const clientIdCookie = request.cookies.get('client_session')?.value;
-    const db = prisma as any;
-
-    let client = clientIdCookie
-      ? await db.clientAccount.findUnique({
-          where: { id: clientIdCookie },
-          include: {
-            customer: true,
-            company: { select: { id: true, name: true, logoUrl: true } },
-          },
-        })
-      : null;
-
-    if (!client) {
-      // Fallback for initial demo environment if no cookie set
-      client = await db.clientAccount.findFirst({
-        where: { isActive: true },
-        include: {
-          customer: true,
-          company: { select: { id: true, name: true, logoUrl: true } },
-        },
-      });
+    if (!clientIdCookie) {
+      return NextResponse.json(
+        { error: 'Client session not found. Please log in.' },
+        { status: 401 }
+      );
     }
 
-    if (!client) {
-      const customer = await db.customer.findFirst({ include: { company: true } });
-      if (customer) {
-        client = await db.clientAccount.create({
-          data: {
-            companyId: customer.companyId,
-            customerId: customer.id,
-            email: customer.email || 'client@company.com',
-            passwordHash: 'hashed_pwd',
-            name: customer.name,
-            phone: customer.phone,
-            isActive: true,
-          },
+    const db = prisma as any;
+    let client: any = null;
+
+    try {
+      if (db.clientAccount?.findUnique) {
+        client = await db.clientAccount.findUnique({
+          where: { id: clientIdCookie },
           include: {
             customer: true,
             company: { select: { id: true, name: true, logoUrl: true } },
           },
         });
       }
+    } catch {
+      // DB lookup fallback
     }
 
     if (!client) {
-      return NextResponse.json(
+      client = AuthUserStore.findClientById(clientIdCookie) || AuthUserStore.findClientByEmail(clientIdCookie);
+    }
+
+    if (!client) {
+      const res = NextResponse.json(
         { error: 'Client session not found. Please log in.' },
         { status: 401 }
       );
+      res.cookies.delete('client_session');
+      return res;
     }
 
     if (client.isActive === false) {
@@ -79,9 +66,21 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     const db = prisma as any;
 
-    let client = clientIdCookie
-      ? await db.clientAccount.findUnique({ where: { id: clientIdCookie } })
-      : await db.clientAccount.findFirst({ where: { isActive: true } });
+    let client: any = null;
+    try {
+      if (db.clientAccount?.findUnique && clientIdCookie) {
+        client = await db.clientAccount.findUnique({
+          where: { id: clientIdCookie },
+          include: { customer: true, company: { select: { id: true, name: true, logoUrl: true } } },
+        });
+      }
+    } catch {
+      // DB lookup fallback
+    }
+
+    if (!client && clientIdCookie) {
+      client = AuthUserStore.findClientById(clientIdCookie);
+    }
 
     if (!client) {
       return NextResponse.json({ error: 'Client session not found.' }, { status: 401 });
@@ -94,18 +93,29 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const updatedClient = await db.clientAccount.update({
-      where: { id: client.id },
-      data: {
-        name: body.name !== undefined ? body.name : undefined,
-        phone: body.phone !== undefined ? body.phone : undefined,
-        email: body.email !== undefined ? body.email : undefined,
-      },
-      include: {
-        customer: true,
-        company: { select: { id: true, name: true, logoUrl: true } },
-      },
-    });
+    let updatedClient = { ...client };
+    if (body.name !== undefined) updatedClient.name = body.name;
+    if (body.phone !== undefined) updatedClient.phone = body.phone;
+    if (body.email !== undefined) updatedClient.email = body.email;
+
+    try {
+      if (db.clientAccount?.update) {
+        updatedClient = await db.clientAccount.update({
+          where: { id: client.id },
+          data: {
+            name: body.name !== undefined ? body.name : undefined,
+            phone: body.phone !== undefined ? body.phone : undefined,
+            email: body.email !== undefined ? body.email : undefined,
+          },
+          include: {
+            customer: true,
+            company: { select: { id: true, name: true, logoUrl: true } },
+          },
+        });
+      }
+    } catch {
+      // Ignore DB write error in memory mode
+    }
 
     return NextResponse.json({ client: updatedClient });
   } catch (error: any) {

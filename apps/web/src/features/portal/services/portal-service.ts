@@ -42,6 +42,9 @@ export async function clientLogout(): Promise<void> {
 export async function fetchClientMe(): Promise<ClientAccount> {
   const res = await fetch('/api/portal/auth/me');
   if (!res.ok) {
+    if (res.status === 401 && typeof document !== 'undefined') {
+      document.cookie = 'client_session=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || 'Unauthorized client session.');
   }
@@ -52,6 +55,9 @@ export async function fetchClientMe(): Promise<ClientAccount> {
 export async function fetchClientDashboard(): Promise<ClientDashboardData> {
   const res = await fetch('/api/portal/dashboard');
   if (!res.ok) {
+    if (res.status === 401 && typeof document !== 'undefined') {
+      document.cookie = 'client_session=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    }
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.error || 'Failed to load client portal dashboard.');
   }
