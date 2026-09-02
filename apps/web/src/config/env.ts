@@ -15,7 +15,9 @@ const envSchema = z.object({
 });
 
 function validateEnv() {
-  if (process.env.NODE_ENV === 'production') {
+  const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+
+  if (process.env.NODE_ENV === 'production' && !isBuildPhase) {
     if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
       throw new Error(
         'CRITICAL SECURITY ERROR: JWT_SECRET environment variable is missing or shorter than 32 characters in production.'
@@ -33,16 +35,17 @@ function validateEnv() {
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     WHATSAPP_ACCESS_TOKEN: process.env.WHATSAPP_ACCESS_TOKEN,
     WHATSAPP_PHONE_NUMBER_ID: process.env.WHATSAPP_PHONE_NUMBER_ID,
-    JWT_SECRET: process.env.JWT_SECRET,
+    JWT_SECRET: process.env.JWT_SECRET || (isBuildPhase ? 'avex_crm_secure_jwt_secret_dev_32char_minimum!' : undefined),
     NODE_ENV: process.env.NODE_ENV,
   });
 
   if (!parsed.success) {
-    // Log warnings in non-production environments
-    if (process.env.NODE_ENV !== 'production') {
+    // Log warnings in non-production environments or during build phase
+    if (process.env.NODE_ENV !== 'production' || isBuildPhase) {
       console.warn('⚠️ Environment variables warning:', parsed.error.format());
+      return envSchema.parse({});
     }
-    return envSchema.parse({});
+    throw new Error(`Invalid environment configuration: ${JSON.stringify(parsed.error.format())}`);
   }
 
   return parsed.data;

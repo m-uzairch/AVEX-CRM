@@ -5,6 +5,8 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "scripts": {
+    "build": "prisma generate",
+    "vercel-build": "prisma generate && prisma migrate deploy",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
     "type-check": "tsc --noEmit"

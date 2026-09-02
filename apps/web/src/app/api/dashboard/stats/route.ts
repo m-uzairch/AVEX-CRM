@@ -82,46 +82,54 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ stats });
   } catch (error) {
-    console.warn('[API GET /api/dashboard/stats] Handled fallback stats response:', error);
-    return NextResponse.json({
-      stats: [
-        {
-          id: 'stat_1',
-          title: 'Total Customers',
-          value: '4',
-          change: '4 active',
-          trend: 'neutral' as const,
-          description: 'Active client company profiles',
-          category: 'customers',
-        },
-        {
-          id: 'stat_2',
-          title: 'Active Projects',
-          value: '3',
-          change: '3 in progress',
-          trend: 'neutral' as const,
-          description: 'Ongoing customer implementations',
-          category: 'projects',
-        },
-        {
-          id: 'stat_3',
-          title: 'Monthly Revenue',
-          value: '$128k',
-          change: 'Closed won revenue',
-          trend: 'neutral' as const,
-          description: 'Paid invoices & won deals',
-          category: 'revenue',
-        },
-        {
-          id: 'stat_4',
-          title: 'Pending Tasks',
-          value: '12',
-          change: '12 open',
-          trend: 'neutral' as const,
-          description: 'Action items requiring team attention',
-          category: 'tasks',
-        },
-      ],
-    });
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('[API GET /api/dashboard/stats] Local development fallback stats:', error);
+      return NextResponse.json({
+        stats: [
+          {
+            id: 'stat_1',
+            title: 'Total Customers',
+            value: '4',
+            change: '4 active',
+            trend: 'neutral' as const,
+            description: 'Active client company profiles',
+            category: 'customers',
+          },
+          {
+            id: 'stat_2',
+            title: 'Active Projects',
+            value: '3',
+            change: '3 in progress',
+            trend: 'neutral' as const,
+            description: 'Ongoing customer implementations',
+            category: 'projects',
+          },
+          {
+            id: 'stat_3',
+            title: 'Monthly Revenue',
+            value: '$128k',
+            change: 'Closed won revenue',
+            trend: 'neutral' as const,
+            description: 'Paid invoices & won deals',
+            category: 'revenue',
+          },
+          {
+            id: 'stat_4',
+            title: 'Pending Tasks',
+            value: '12',
+            change: '12 open',
+            trend: 'neutral' as const,
+            description: 'Action items requiring team attention',
+            category: 'tasks',
+          },
+        ],
+      });
+    }
+
+    console.error('[API GET /api/dashboard/stats] Internal Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to retrieve dashboard statistics' },
+      { status: 500 }
+    );
   }
 }
