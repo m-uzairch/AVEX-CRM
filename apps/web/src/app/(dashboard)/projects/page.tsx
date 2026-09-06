@@ -27,131 +27,13 @@ import {
 } from '@/features/projects/types/project-types';
 import { Pagination } from '@/components/ui/pagination';
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: 'proj_001',
-    companyId: 'comp_001',
-    projectCode: 'AVX-0001',
-    name: 'Enterprise CRM Portal Migration',
-    description: 'Modernizing internal CRM infrastructure, database migration, and multi-tenant authentication setup.',
-    status: 'IN_PROGRESS',
-    priority: 'HIGH',
-    startDate: '2026-07-01T00:00:00Z',
-    expectedCompletionDate: '2026-09-15T00:00:00Z',
-    budget: 45000,
-    isArchived: false,
-    createdAt: '2026-07-01T10:00:00Z',
-    updatedAt: '2026-08-01T14:30:00Z',
-    customer: {
-      id: 'cust_001',
-      name: 'Sarah Jenkins',
-      companyName: 'Acme Corporation',
-      email: 'sarah@acme.com',
-    },
-    projectManager: {
-      id: 'usr_001',
-      fullName: 'Alex Carter',
-      email: 'alex@avexcrm.com',
-    },
-    category: {
-      id: 'cat_001',
-      companyId: 'comp_001',
-      name: 'CRM & Systems',
-      color: '#EC4899',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    },
-    members: [
-      { id: 'pm_1', projectId: 'proj_001', userId: 'usr_001', role: 'PROJECT_MANAGER', createdAt: '', user: { id: 'usr_001', fullName: 'Alex Carter', email: 'alex@avex.com' } },
-      { id: 'pm_2', projectId: 'proj_001', userId: 'usr_002', role: 'MEMBER', createdAt: '', user: { id: 'usr_002', fullName: 'Elena Rostova', email: 'elena@avex.com' } },
-      { id: 'pm_3', projectId: 'proj_001', userId: 'usr_003', role: 'MEMBER', createdAt: '', user: { id: 'usr_003', fullName: 'Marcus Vance', email: 'marcus@avex.com' } },
-    ],
-  },
-  {
-    id: 'proj_002',
-    companyId: 'comp_001',
-    projectCode: 'AVX-0002',
-    name: 'Mobile iOS & Android App Launch',
-    description: 'Native mobile client apps with push notifications, offline storage, and biometric auth.',
-    status: 'PLANNING',
-    priority: 'URGENT',
-    startDate: '2026-08-10T00:00:00Z',
-    expectedCompletionDate: '2026-11-30T00:00:00Z',
-    budget: 65000,
-    isArchived: false,
-    createdAt: '2026-07-15T12:00:00Z',
-    updatedAt: '2026-08-02T09:00:00Z',
-    customer: {
-      id: 'cust_002',
-      name: 'David Sterling',
-      companyName: 'Nexus Global Tech',
-      email: 'david@nexus.io',
-    },
-    projectManager: {
-      id: 'usr_002',
-      fullName: 'Elena Rostova',
-      email: 'elena@avexcrm.com',
-    },
-    category: {
-      id: 'cat_002',
-      companyId: 'comp_001',
-      name: 'Mobile Application',
-      color: '#8B5CF6',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    },
-    members: [
-      { id: 'pm_4', projectId: 'proj_002', userId: 'usr_002', role: 'PROJECT_MANAGER', createdAt: '', user: { id: 'usr_002', fullName: 'Elena Rostova', email: 'elena@avex.com' } },
-      { id: 'pm_5', projectId: 'proj_002', userId: 'usr_004', role: 'MEMBER', createdAt: '', user: { id: 'usr_004', fullName: 'David Kim', email: 'david@avex.com' } },
-    ],
-  },
-  {
-    id: 'proj_003',
-    companyId: 'comp_001',
-    projectCode: 'AVX-0003',
-    name: 'E-Commerce Storefront Redesign',
-    description: 'Headless Next.js storefront, Stripe checkout integration, and custom inventory sync.',
-    status: 'COMPLETED',
-    priority: 'MEDIUM',
-    startDate: '2026-05-01T00:00:00Z',
-    expectedCompletionDate: '2026-07-20T00:00:00Z',
-    actualCompletionDate: '2026-07-18T00:00:00Z',
-    budget: 28000,
-    isArchived: false,
-    createdAt: '2026-05-01T08:00:00Z',
-    updatedAt: '2026-07-18T16:00:00Z',
-    customer: {
-      id: 'cust_003',
-      name: 'Chloe Bennett',
-      companyName: 'Luxe Apparel Inc',
-      email: 'chloe@luxeapparel.com',
-    },
-    projectManager: {
-      id: 'usr_001',
-      fullName: 'Alex Carter',
-      email: 'alex@avexcrm.com',
-    },
-    category: {
-      id: 'cat_003',
-      companyId: 'comp_001',
-      name: 'E-commerce',
-      color: '#10B981',
-      createdAt: '2026-01-01T00:00:00Z',
-      updatedAt: '2026-01-01T00:00:00Z',
-    },
-    members: [
-      { id: 'pm_6', projectId: 'proj_003', userId: 'usr_001', role: 'PROJECT_MANAGER', createdAt: '', user: { id: 'usr_001', fullName: 'Alex Carter', email: 'alex@avex.com' } },
-    ],
-  },
-];
-
-const MOCK_STATS: ProjectStats = {
-  totalProjects: 3,
-  activeProjects: 2,
-  completedProjects: 1,
+const INITIAL_ZERO_STATS: ProjectStats = {
+  totalProjects: 0,
+  activeProjects: 0,
+  completedProjects: 0,
   overdueProjects: 0,
-  totalTeamMembers: 4,
-  totalTasks: 24,
+  totalTeamMembers: 0,
+  totalTasks: 0,
 };
 
 function ProjectsContent() {
@@ -177,7 +59,7 @@ function ProjectsContent() {
 
   const [projects, setProjects] = React.useState<Project[]>([]);
   const [categories, setCategories] = React.useState<ProjectCategory[]>([]);
-  const [stats, setStats] = React.useState<ProjectStats>(MOCK_STATS);
+  const [stats, setStats] = React.useState<ProjectStats>(INITIAL_ZERO_STATS);
   const [loading, setLoading] = React.useState(true);
   const [totalPages, setTotalPages] = React.useState(1);
   const [editingProject, setEditingProject] = React.useState<Project | null>(null);
@@ -186,25 +68,23 @@ function ProjectsContent() {
     ? tabParam
     : 'dashboard') as 'dashboard' | 'all' | 'active' | 'completed' | 'archived';
 
-  React.useEffect(() => {
-    fetchProjectCategories()
-      .then((cats) => setCategories(cats))
-      .catch(() => {});
-
-    fetchProjectStats()
-      .then((st) => setStats(st))
-      .catch(() => {});
-  }, []);
-
   const loadData = React.useCallback(async () => {
     try {
       setLoading(true);
+
+      const [cats, statsData] = await Promise.all([
+        fetchProjectCategories().catch(() => []),
+        fetchProjectStats().catch(() => INITIAL_ZERO_STATS),
+      ]);
+
+      setCategories(cats);
+      setStats(statsData || INITIAL_ZERO_STATS);
 
       let effectiveStatus: ProjectStatus | 'ALL' = statusFilter;
       let effectiveIsArchived = false;
 
       if (activeTab === 'active') {
-        effectiveIsArchived = false;
+        effectiveStatus = 'IN_PROGRESS';
       } else if (activeTab === 'completed') {
         effectiveStatus = 'COMPLETED';
       } else if (activeTab === 'archived') {
@@ -226,15 +106,12 @@ function ProjectsContent() {
       if (res.data && res.data.length > 0) {
         setProjects(res.data);
         setTotalPages(res.totalPages);
-      } else if (!searchQuery && statusFilter === 'ALL' && priorityFilter === 'ALL' && categoryFilter === 'ALL' && page === 1) {
-        setProjects(MOCK_PROJECTS);
-        setTotalPages(1);
       } else {
         setProjects([]);
         setTotalPages(1);
       }
     } catch {
-      setProjects(MOCK_PROJECTS);
+      setProjects([]);
       setTotalPages(1);
     } finally {
       setLoading(false);

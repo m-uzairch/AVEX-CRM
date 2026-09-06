@@ -144,40 +144,40 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Client Portal Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-card/95 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+        <div className="w-full max-w-[1600px] mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
             {/* Left: Mobile Toggle & Brand */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2.5 sm:space-x-3 shrink-0">
               <Button
                 variant="ghost"
                 size="icon"
-                className="md:hidden h-9 w-9 text-muted-foreground"
+                className="lg:hidden h-9 w-9 text-muted-foreground shrink-0"
                 onClick={() => setIsMobileNavOpen(!isMobileNavOpen)}
                 aria-label="Toggle navigation"
               >
                 {isMobileNavOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
 
-              <Link href="/portal" className="flex items-center space-x-2.5">
-                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-extrabold flex items-center justify-center text-sm shadow-xs">
+              <Link href="/portal" className="flex items-center space-x-2.5 shrink-0 group">
+                <div className="h-8 w-8 rounded-lg bg-primary text-primary-foreground font-extrabold flex items-center justify-center text-sm shadow-xs shrink-0">
                   AV
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-bold text-sm tracking-tight text-foreground flex items-center gap-1.5">
-                    AVEX
-                    <Badge variant="secondary" className="text-[10px] font-semibold px-1.5 py-0">
+                <div className="flex flex-col shrink-0">
+                  <div className="flex items-center gap-1.5 whitespace-nowrap">
+                    <span className="font-bold text-sm tracking-tight text-foreground">AVEX</span>
+                    <Badge variant="secondary" className="text-[10px] font-medium px-1.5 py-0 whitespace-nowrap">
                       Client Portal
                     </Badge>
-                  </span>
-                  <span className="text-[10px] text-muted-foreground hidden sm:inline">
-                    {client?.customer?.companyName || 'Enterprise Customer Workspace'}
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:inline max-w-[130px] md:max-w-[160px] truncate">
+                    {client?.customer?.companyName || 'Enterprise Workspace'}
                   </span>
                 </div>
               </Link>
             </div>
 
             {/* Desktop Navigation Links */}
-            <nav className="hidden lg:flex items-center space-x-1">
+            <nav className="hidden lg:flex items-center space-x-0.5 xl:space-x-1.5 overflow-x-auto no-scrollbar py-1">
               {navLinks.map((link) => {
                 const isActive =
                   pathname === link.href ||
@@ -187,7 +187,7 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    className={`flex items-center space-x-1.5 px-2.5 xl:px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition-colors ${
                       isActive
                         ? 'bg-primary/10 text-primary font-bold shadow-2xs'
                         : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -201,15 +201,15 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
             </nav>
 
             {/* Right: Actions, Notifications, Profile & Logout */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
               <ThemeToggle />
 
               {/* Notification Popover Button */}
-              <div className="relative">
+              <div className="relative shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 text-muted-foreground relative"
+                  className="h-9 w-9 text-muted-foreground relative shrink-0"
                   onClick={() => setShowNotifs(!showNotifs)}
                   title="Notifications"
                 >
@@ -258,12 +258,13 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
               {client && (
                 <Link
                   href="/portal/profile"
-                  className="flex items-center space-x-2 p-1.5 rounded-lg hover:bg-muted/60 transition-colors text-xs"
+                  className="flex items-center space-x-1.5 sm:space-x-2 p-1 rounded-lg hover:bg-muted/60 transition-colors text-xs shrink-0"
+                  title="Client Profile"
                 >
-                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center border border-primary/20 text-xs">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center border border-primary/20 text-xs shrink-0">
                     {initials}
                   </div>
-                  <div className="hidden xl:flex flex-col text-left">
+                  <div className="hidden 2xl:flex flex-col text-left">
                     <span className="font-bold text-foreground truncate max-w-[110px]">{client.name}</span>
                     <span className="text-[10px] text-muted-foreground truncate max-w-[110px]">
                       {client.customer?.companyName || 'Client'}
@@ -277,7 +278,7 @@ export function PortalLayoutClient({ children }: PortalLayoutClientProps) {
                 variant="ghost"
                 size="icon"
                 onClick={handleLogout}
-                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
                 title="Sign Out of Client Portal"
               >
                 <LogOut className="h-4 w-4" />

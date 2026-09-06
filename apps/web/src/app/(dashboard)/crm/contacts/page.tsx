@@ -14,32 +14,7 @@ interface ContactRecord {
   phone: string;
 }
 
-const mockContacts: ContactRecord[] = [
-  {
-    id: 'ct-1',
-    name: 'Sarah Jenkins',
-    jobTitle: 'VP of Technology',
-    company: 'Acuity Solutions',
-    email: 'sarah@acuity.com',
-    phone: '+1 (555) 234-5678',
-  },
-  {
-    id: 'ct-2',
-    name: 'Michael Vance',
-    jobTitle: 'Chief Executive Officer',
-    company: 'Vance Tech',
-    email: 'm.vance@vancetech.io',
-    phone: '+1 (555) 876-5432',
-  },
-  {
-    id: 'ct-3',
-    name: 'Elena Rostova',
-    jobTitle: 'Procurement Manager',
-    company: 'Apex Systems',
-    email: 'elena@apexsys.com',
-    phone: '+1 (555) 345-6789',
-  },
-];
+const mockContacts: ContactRecord[] = [];
 
 export default function ContactsPage() {
   const [search, setSearch] = React.useState('');

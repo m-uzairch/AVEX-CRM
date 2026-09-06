@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopNavbar } from '@/components/layout/top-navbar';
+import { OnboardingTourModal } from '@/components/onboarding/onboarding-tour-modal';
 import { cn } from '@/lib/utils';
 
 export default function DashboardLayout({
@@ -35,6 +36,9 @@ export default function DashboardLayout({
         </div>
         <main className="flex-1 overflow-y-auto min-h-0 pt-3 lg:pr-3">{children}</main>
       </div>
+
+      {/* Step-by-Step Feature Onboarding Tour Modal */}
+      <OnboardingTourModal />
     </div>
   );
 }

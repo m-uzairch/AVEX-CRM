@@ -9,9 +9,10 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/features/auth/stores/auth-store';
 import { AuthService } from '@/features/auth/services/auth-service';
 import { UserRole } from '@/features/rbac/types/rbac-types';
-import { Menu, User, Settings, LogOut, Shield } from 'lucide-react';
+import { Menu, User, Settings, LogOut, Shield, Sparkles } from 'lucide-react';
 import { NotificationCenterDropdown } from '@/components/notifications/notification-center-dropdown';
 import { GlobalSearchPopover } from '@/components/search/global-search-popover';
+import { useOnboardingTour } from '@/hooks/use-onboarding-tour';
 
 import { SwitchRoleModal } from './switch-role-modal';
 
@@ -51,6 +52,7 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
 
   const user = useAuthStore((state) => state.user);
   const logout = useAuthStore((state) => state.logout);
+  const openTour = useOnboardingTour((state) => state.openTour);
 
   const activeRole: UserRole = (user?.role as UserRole) || 'COMPANY_OWNER';
   const isOwner = activeRole === 'COMPANY_OWNER';
@@ -71,6 +73,11 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
   };
 
   const userMenuItems = [
+    {
+      label: 'Product Tour Guide',
+      icon: <Sparkles className="h-4 w-4 text-primary" />,
+      onClick: openTour,
+    },
     {
       label: 'Profile Settings',
       icon: <User className="h-4 w-4" />,
@@ -140,6 +147,17 @@ export function TopNavbar({ onOpenMobileSidebar }: TopNavbarProps) {
 
         {/* Right Controls */}
         <div className="flex items-center space-x-3">
+          {/* Product Tour Guide Button */}
+          <button
+            type="button"
+            onClick={openTour}
+            className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg border border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary text-xs font-medium transition-colors"
+            title="Start Product Feature Tour"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>Tour Guide</span>
+          </button>
+
           {/* Authenticated Role Switcher — ONLY visible to Company Owner with re-auth */}
           {isOwner && (
             <div className="hidden sm:flex items-center space-x-1.5 border border-primary/30 rounded-lg bg-primary/5 px-2 py-1">

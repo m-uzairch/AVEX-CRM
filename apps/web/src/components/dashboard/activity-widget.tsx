@@ -12,6 +12,9 @@ const typeIconMap: Record<ActivityItemData['type'], React.ReactNode> = {
   project: <FolderKanban className="h-3.5 w-3.5 text-accent-foreground" />,
 };
 
+import Link from 'next/link';
+import { EmptyWidgetState } from './empty-widget-state';
+
 export function ActivityWidget() {
   return (
     <WidgetCard
@@ -19,27 +22,37 @@ export function ActivityWidget() {
       description="Latest company transactions and logs."
       icon={<Activity className="h-4 w-4" />}
       action={
-        <Button variant="ghost" size="sm" className="text-xs h-8">
-          View All <ArrowRight className="h-3.5 w-3.5 ml-1" />
-        </Button>
+        <Link href="/crm">
+          <Button variant="ghost" size="sm" className="text-xs h-8">
+            View CRM <ArrowRight className="h-3.5 w-3.5 ml-1" />
+          </Button>
+        </Link>
       }
     >
-      <div className="space-y-4 pt-2">
-        {MOCK_ACTIVITIES.map((act) => (
-          <div key={act.id} className="flex items-start space-x-3 text-xs">
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted border border-border">
-              {typeIconMap[act.type]}
+      {MOCK_ACTIVITIES.length === 0 ? (
+        <EmptyWidgetState
+          icon={<Activity className="h-5 w-5" />}
+          title="No activity recorded yet"
+          description="Customer interactions, pipeline updates, and invoice events will appear in your timeline."
+        />
+      ) : (
+        <div className="space-y-4 pt-2">
+          {MOCK_ACTIVITIES.map((act) => (
+            <div key={act.id} className="flex items-start space-x-3 text-xs">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted border border-border">
+                {typeIconMap[act.type]}
+              </div>
+              <div className="flex-1 space-y-0.5">
+                <div className="font-semibold text-foreground">{act.title}</div>
+                <div className="text-muted-foreground">{act.subtitle}</div>
+              </div>
+              <Badge variant="outline" className="text-[10px] text-muted-foreground">
+                {act.time}
+              </Badge>
             </div>
-            <div className="flex-1 space-y-0.5">
-              <div className="font-semibold text-foreground">{act.title}</div>
-              <div className="text-muted-foreground">{act.subtitle}</div>
-            </div>
-            <Badge variant="outline" className="text-[10px] text-muted-foreground">
-              {act.time}
-            </Badge>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </WidgetCard>
   );
 }

@@ -62,113 +62,11 @@ export class CRMDashboardService {
   }
 
   static async fetchEmployeePerformance(): Promise<EmployeePerformanceItem[]> {
-    return [
-      {
-        employeeId: 'emp_001',
-        employeeName: 'Alex Carter',
-        avatar: '/avatars/alex.jpg',
-        jobTitle: 'Senior Account Executive',
-        assignedLeads: 32,
-        assignedCustomers: 45,
-        conversionRate: 34.2,
-        completedTasks: 128,
-        wonDealValue: 185000,
-      },
-      {
-        employeeId: 'emp_002',
-        employeeName: 'Jordan Smith',
-        avatar: '/avatars/jordan.jpg',
-        jobTitle: 'Sales Development Rep',
-        assignedLeads: 28,
-        assignedCustomers: 31,
-        conversionRate: 28.5,
-        completedTasks: 94,
-        wonDealValue: 120000,
-      },
-      {
-        employeeId: 'emp_003',
-        employeeName: 'Ali Hassan',
-        avatar: '/avatars/ali.jpg',
-        jobTitle: 'Customer Success Manager',
-        assignedLeads: 14,
-        assignedCustomers: 52,
-        conversionRate: 42.1,
-        completedTasks: 156,
-        wonDealValue: 95000,
-      },
-      {
-        employeeId: 'emp_004',
-        employeeName: 'Sarah Miller',
-        avatar: '/avatars/sarah.jpg',
-        jobTitle: 'Enterprise SDR',
-        assignedLeads: 22,
-        assignedCustomers: 18,
-        conversionRate: 22.8,
-        completedTasks: 76,
-        wonDealValue: 84000,
-      },
-    ];
+    return [];
   }
 
   static async fetchUpcomingFollowups(): Promise<UpcomingFollowupItem[]> {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-    const inThreeDays = new Date(today);
-    inThreeDays.setDate(today.getDate() + 3);
-
-    return [
-      {
-        id: 'fol_001',
-        entityType: 'LEAD',
-        entityId: 'lead_001',
-        entityName: 'Apex Systems Inc.',
-        contactName: 'Elena Rostova',
-        dueDate: yesterday.toISOString(),
-        priority: 'URGENT',
-        assignedEmployeeName: 'Alex Carter',
-        isOverdue: true,
-        notes: 'Follow up on technical architecture review call and custom proposal pricing.',
-      },
-      {
-        id: 'fol_002',
-        entityType: 'CUSTOMER',
-        entityId: 'cust_001',
-        entityName: 'Acuity Solutions',
-        contactName: 'Sarah Jenkins',
-        dueDate: today.toISOString(),
-        priority: 'HIGH',
-        assignedEmployeeName: 'Alex Carter',
-        isOverdue: false,
-        notes: 'Quarterly renewal call to discuss seat expansion & enterprise addon modules.',
-      },
-      {
-        id: 'fol_003',
-        entityType: 'LEAD',
-        entityId: 'lead_002',
-        entityName: 'Vance Tech Labs',
-        contactName: 'Michael Vance',
-        dueDate: tomorrow.toISOString(),
-        priority: 'MEDIUM',
-        assignedEmployeeName: 'Jordan Smith',
-        isOverdue: false,
-        notes: 'Send updated contract terms and schedule final demo with CTO.',
-      },
-      {
-        id: 'fol_004',
-        entityType: 'CUSTOMER',
-        entityId: 'cust_002',
-        entityName: 'Nexus Global Software',
-        contactName: 'David Zhang',
-        dueDate: inThreeDays.toISOString(),
-        priority: 'LOW',
-        assignedEmployeeName: 'Ali Hassan',
-        isOverdue: false,
-        notes: 'Onboarding check-in call and support ticket review.',
-      },
-    ];
+    return [];
   }
 
   static async exportReport(

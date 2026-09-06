@@ -64,25 +64,37 @@ export default function DashboardPage() {
     loadStats();
   }, []);
 
-  const userName = user?.fullName ? user.fullName.split(' ')[0] : 'Uzair';
-  const companyName = company?.name || user?.companyName || 'AVEX CRM Workspace';
+  const userName = user?.fullName ? user.fullName.split(' ')[0] : 'there';
+  const companyName = company?.name || user?.companyName || 'Your Workspace';
 
   return (
     <ContentContainer>
       {/* Welcome Header */}
       <PageHeader
         title={`${greeting}, ${userName} 👋`}
-        description={`Welcome back to ${companyName}.${currentDateFormatted ? ` Today is ${currentDateFormatted}.` : ''}`}
+        description={`Welcome to ${companyName}.${currentDateFormatted ? ` Today is ${currentDateFormatted}.` : ''}`}
         breadcrumbs={[{ label: 'Dashboard' }]}
         actions={
           <div className="flex space-x-2">
-            <Button variant="outline" size="sm">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = '/reports';
+              }}
+            >
               <Download className="h-4 w-4 mr-1.5" />
-              Export Report
+              View Reports
             </Button>
-            <Button variant="default" size="sm">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => {
+                window.location.href = '/crm/leads';
+              }}
+            >
               <Plus className="h-4 w-4 mr-1.5" />
-              New Deal
+              New Lead
             </Button>
           </div>
         }
